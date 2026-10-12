@@ -687,6 +687,86 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
   );
 }
 
+/* ---------- ORIENTATION (Step 2.6: landscape-only app) ---------- */
+
+// TEMP (Step 2.6): set to false to remove the debug label from every screen.
+const SHOW_DEBUG = true;
+
+/**
+ * True when the viewport is portrait.
+ *
+ * Android Chrome still reports the pre-rotation innerWidth/innerHeight right
+ * after orientationchange, so the size is re-read twice on every event: once
+ * immediately and once more after a short delay, and the latest value wins.
+ */
+function useIsPortrait(): boolean {
+  const [isPortrait, setIsPortrait] = useState<boolean>(() =>
+    typeof window === 'undefined' ? false : window.innerHeight > window.innerWidth
+  );
+
+  useEffect(() => {
+    let refreshTimer: number | undefined;
+
+    const read = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = undefined;
+        setIsPortrait(window.innerHeight > window.innerWidth);
+      }, 300);
+    };
+
+    const portraitQuery = window.matchMedia('(orientation: portrait)');
+    const viewport = window.visualViewport;
+
+    read();
+    window.addEventListener('resize', read);
+    window.addEventListener('orientationchange', read);
+    portraitQuery.addEventListener('change', read);
+    if (viewport) viewport.addEventListener('resize', read);
+
+    return () => {
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+      window.removeEventListener('resize', read);
+      window.removeEventListener('orientationchange', read);
+      portraitQuery.removeEventListener('change', read);
+      if (viewport) viewport.removeEventListener('resize', read);
+    };
+  }, []);
+
+  return isPortrait;
+}
+
+/* TEMP (Step 2.6) debug label - remove by setting SHOW_DEBUG to false. */
+function DebugLabel({ portrait }: { portrait: boolean }) {
+  const [, forceUpdate] = useState<number>(0);
+
+  useEffect(() => {
+    const update = () => forceUpdate(v => v + 1);
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    const interval = window.setInterval(update, 400);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  if (!SHOW_DEBUG) return null;
+
+  const angle = typeof screen !== 'undefined' && screen.orientation ? screen.orientation.angle : 'n/a';
+
+  return (
+    <div
+      className="absolute bottom-1 left-1 text-[10px] leading-tight text-muted font-body select-none pointer-events-none"
+      id="debug-label"
+    >
+      v2.6 | {window.innerWidth}x{window.innerHeight} | portrait={String(portrait)} | angle={angle}
+    </div>
+  );
+}
+
 export default function App() {
   /* ---------- REACT STATE ---------- */
   const [gameState, setGameState] = useState<'title' | 'countdown' | 'playing' | 'gameover'>('title');
@@ -724,7 +804,8 @@ export default function App() {
   const [isBoosting, setIsBoosting] = useState<boolean>(false);
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
   const [garageOpen, setGarageOpen] = useState<boolean>(false);
-  const [isPortrait, setIsPortrait] = useState<boolean>(false);
+  // Step 2.6: one hook drives orientation for the whole app.
+  const isPortrait = useIsPortrait();
   const [fullscreenOn, setFullscreenOn] = useState<boolean>(false);
   const [showQuitConfirm, setShowQuitConfirm] = useState<boolean>(false);
 
@@ -736,8 +817,6 @@ export default function App() {
   // Active vehicle state ref for the fast-paced Three.js animation loop
   const activeVehicleRef = useRef<Vehicle>(VEHICLES[0]);
   const pausedRef = useRef<boolean>(false);
-  // True when the app auto-paused the game because the phone is in portrait.
-  const autoPausedRef = useRef<boolean>(false);
   // Step 2.5 exit and interruption handling refs
   const gameStateRef = useRef<'title' | 'countdown' | 'playing' | 'gameover'>('title');
   const runPushedRef = useRef<boolean>(false);
@@ -828,33 +907,13 @@ export default function App() {
     synth.setMute(muted);
   }, [muted]);
 
-  // Track portrait / landscape. The game is meant to be played in landscape.
+  // Step 2.6: the whole app is landscape-only. In portrait the Rotate overlay
+  // covers every screen and any run in progress is paused. It never auto-resumes.
   useEffect(() => {
-    const query = window.matchMedia('(orientation: portrait)');
-    const update = () => setIsPortrait(query.matches);
-    update();
-    query.addEventListener('change', update);
-    window.addEventListener('resize', update);
-    return () => {
-      query.removeEventListener('change', update);
-      window.removeEventListener('resize', update);
-    };
-  }, []);
-
-  // While in portrait during a race, auto-pause and show the rotate hint.
-  const needsRotate = isPortrait && (gameState === 'playing' || gameState === 'countdown');
-
-  useEffect(() => {
-    if (needsRotate) {
-      if (!paused) {
-        setPaused(true);
-        autoPausedRef.current = true;
-      }
-    } else if (autoPausedRef.current) {
-      autoPausedRef.current = false;
-      setPaused(false);
+    if (isPortrait && (gameState === 'playing' || gameState === 'countdown') && !paused) {
+      setPaused(true);
     }
-  }, [needsRotate, paused]);
+  }, [isPortrait, gameState, paused]);
 
   // Sync active vehicle ref when user clicks in React UI
   const handleSelectVehicle = (id: 'titan' | 'blade' | 'glide' | 'bmw') => {
@@ -3424,7 +3483,7 @@ export default function App() {
             )}
 
             {/* --- OVERLAY: PAUSED SCREEN --- */}
-            {paused && (gameState === 'playing' || gameState === 'countdown') && !needsRotate && (
+            {paused && (gameState === 'playing' || gameState === 'countdown') && (
               <div className="absolute inset-0 bg-asphalt/90 flex flex-col items-center justify-center p-6 text-center z-20 pointer-events-auto" id="paused-screen-overlay">
                 <div className="arcade-panel max-w-md w-full animate-fade-in p-6 max-h-[92vh] overflow-y-auto">
                   <h2 className="text-4xl sm:text-5xl font-bold text-text font-display">
@@ -3513,16 +3572,16 @@ export default function App() {
               </div>
             )}
 
-            {/* --- OVERLAY: MAIN MENU (PLAY always visible, no scrolling) --- */}
+            {/* --- OVERLAY: MAIN MENU (Step 2.6: landscape-first, fits 915x412 and 800x360) --- */}
             {gameState === 'title' && (
               <div
-                className="absolute inset-0 bg-asphalt/85 flex flex-col items-center justify-center text-center z-10 overflow-y-auto safe-pad-t safe-pad-b"
+                className="absolute inset-0 bg-asphalt/85 flex flex-col z-10 overflow-y-auto safe-pad-t safe-pad-b"
                 id="title-screen-overlay"
               >
-                <div className="w-full max-w-sm flex flex-col items-center gap-3 px-4">
+                <div className="w-full max-w-3xl mx-auto flex flex-col h-full px-3 py-2 sm:px-6 sm:py-3">
 
                   {/* Audio toggle and driver name (moved out of the removed nav bar) */}
-                  <div className="w-full flex items-center justify-between gap-2">
+                  <div className="w-full flex items-center justify-between gap-2 shrink-0">
                     <div className="flex items-center gap-2">
                       <button
                         className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
@@ -3577,46 +3636,54 @@ export default function App() {
                     )}
                   </div>
 
-                  <div className="inline-block px-3 py-1 rounded-ui bg-steel border border-edge text-muted text-xs font-semibold">
-                    3D highway traffic racer
+                  {/* Two columns: branding on the left, actions on the right */}
+                  <div className="flex-1 min-h-0 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+
+                    <div className="flex flex-col items-center sm:items-start text-center sm:text-left gap-2 flex-1 min-w-0">
+                      <div className="inline-block px-3 py-1 rounded-ui bg-steel border border-edge text-muted text-xs font-semibold">
+                        3D highway traffic racer
+                      </div>
+
+                      <h1 className="text-4xl sm:text-6xl font-bold text-text font-display">
+                        Neon Rush 3D
+                      </h1>
+
+                      {highScore > 0 && (
+                        <div className="text-primary text-sm font-semibold flex items-center gap-1.5">
+                          <Trophy className="w-4 h-4" /> Best distance: {highScore}m
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="w-full sm:w-60 shrink-0 flex flex-col gap-3">
+                      <button
+                        onClick={startGame}
+                        className="arcade-button w-full min-h-14 px-6 py-4 bg-primary text-asphalt font-bold text-lg font-display cursor-pointer flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                        id="btn-engage-engine"
+                      >
+                        <Play className="w-6 h-6 fill-current" /> Play
+                      </button>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          onClick={() => setGarageOpen(true)}
+                          className="arcade-button min-h-12 px-4 py-3 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
+                          id="btn-garage"
+                        >
+                          <Car className="w-4 h-4" /> Garage
+                        </button>
+                        <button
+                          onClick={() => setShowHelpModal(true)}
+                          className="arcade-button min-h-12 px-4 py-3 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
+                          id="btn-how-to-play"
+                        >
+                          <HelpCircle className="w-4 h-4" /> How to play
+                        </button>
+                      </div>
+                    </div>
+
                   </div>
 
-                  <h1 className="text-4xl sm:text-6xl font-bold text-text font-display">
-                    Neon Rush 3D
-                  </h1>
-
-                  {highScore > 0 && (
-                    <div className="text-primary text-sm font-semibold flex items-center gap-1.5">
-                      <Trophy className="w-4 h-4" /> Best distance: {highScore}m
-                    </div>
-                  )}
-
-                  <div className="w-full flex flex-col gap-3 mt-2">
-                    <button
-                      onClick={startGame}
-                      className="arcade-button w-full min-h-14 px-6 py-4 bg-primary text-asphalt font-bold text-lg font-display cursor-pointer flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                      id="btn-engage-engine"
-                    >
-                      <Play className="w-6 h-6 fill-current" /> Play
-                    </button>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setGarageOpen(true)}
-                        className="arcade-button min-h-12 px-4 py-3 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
-                        id="btn-garage"
-                      >
-                        <Car className="w-4 h-4" /> Garage
-                      </button>
-                      <button
-                        onClick={() => setShowHelpModal(true)}
-                        className="arcade-button min-h-12 px-4 py-3 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
-                        id="btn-how-to-play"
-                      >
-                        <HelpCircle className="w-4 h-4" /> How to play
-                      </button>
-                    </div>
-                  </div>
-
+                  <DebugLabel portrait={isPortrait} />
                 </div>
               </div>
             )}
@@ -3750,7 +3817,7 @@ export default function App() {
       {/* --- GARAGE OVERLAY (temporary car picker; real Garage arrives in Step 7) --- */}
       {garageOpen && (
         <div className="absolute inset-0 z-40 bg-asphalt flex flex-col safe-pad-t safe-pad-b" id="garage-overlay">
-          <div className="flex items-center justify-between p-4 border-b border-edge shrink-0">
+          <div className="flex items-center justify-between py-2 px-3 sm:px-4 border-b border-edge shrink-0">
             <h2 className="text-lg font-bold font-display text-text">Garage</h2>
             <button
               onClick={() => setGarageOpen(false)}
@@ -3760,8 +3827,12 @@ export default function App() {
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-4 border-b border-edge pb-2">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
+
+          {/* Left column: the vehicle that is currently equipped */}
+          <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-3 border-b border-edge pb-2">
             <div className="flex items-center gap-2">
               <Cpu className="w-4 h-4 text-primary" />
               <h3 className="text-xs font-bold text-primary">Active vehicle</h3>
@@ -3769,8 +3840,8 @@ export default function App() {
           </div>
 
           {/* Vehicle Silhouette Preview */}
-          <div className="mb-6">
-            <div className="aspect-video bg-steel-light border border-edge rounded-ui flex flex-col items-center justify-center p-3 relative overflow-hidden">
+          <div className="mb-4">
+            <div className="aspect-video max-h-[20vh] bg-steel-light border border-edge rounded-ui flex flex-col items-center justify-center p-3 relative overflow-hidden">
               {/* Procedural SVG Silhouette tailored to the active vehicle */}
               <div className="relative z-10 w-full flex items-center justify-center py-2">
                 <svg viewBox="0 0 260 90" className="w-48 h-auto overflow-visible">
@@ -3859,12 +3930,18 @@ export default function App() {
               </span>
             </div>
             
-            <p className="text-xs text-muted mt-2.5 leading-relaxed font-body border-b border-edge pb-4 min-h-[48px]">
+            </div>
+          </div>
+
+          {/* Middle column: description + specs */}
+          <div className="w-full sm:w-48 shrink-0">
+
+            <p className="text-xs text-muted mt-2.5 leading-relaxed font-body border-b border-edge pb-3 mb-3">
               {activeVehicle.description}
             </p>
 
             {/* Spec Sliders */}
-            <div className="space-y-3 mt-4">
+            <div className="space-y-3">
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1 text-muted">
                   <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-secondary" /> Speed</span>
@@ -3906,9 +3983,12 @@ export default function App() {
             </div>
           </div>
 
+          {/* Right column: the car list */}
+          <div className="w-full sm:w-80 shrink-0 flex flex-col">
+
           {/* Vehicle Selection List */}
-          <div className="mt-auto border-t border-edge pt-4">
-            <div className="flex justify-between items-center mb-2">
+          <div className="mt-auto border-t border-edge pt-3">
+            <div className="flex justify-between items-center mb-1.5">
               <span className="text-xs text-muted font-semibold flex items-center gap-1">
                 <Car className="w-3 h-3" /> Select car
               </span>
@@ -3946,17 +4026,10 @@ export default function App() {
               })}
             </div>
           </div>
+          </div>
 
           </div>
-        </div>
-      )}
-
-      {/* --- ROTATE TO LANDSCAPE OVERLAY --- */}
-      {needsRotate && (
-        <div className="absolute inset-0 z-50 bg-asphalt flex flex-col items-center justify-center text-center p-6 safe-pad-t safe-pad-b" id="rotate-overlay">
-          <RotateCcw className="w-12 h-12 text-secondary mb-4" />
-          <h2 className="text-2xl font-bold font-display text-text">Rotate your phone</h2>
-          <p className="text-muted text-sm mt-2 font-body">Neon Rush plays in landscape.</p>
+          </div>
         </div>
       )}
 
@@ -4059,6 +4132,21 @@ export default function App() {
               <Play className="w-4 h-4 fill-current" /> Ready
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ---------- ROTATE TO LANDSCAPE OVERLAY (Step 2.6) ----------
+          Rendered LAST so it covers every screen: menu, garage, how-to-play
+          and the running game. It clears itself as soon as landscape returns. */}
+      {isPortrait && (
+        <div
+          className="absolute inset-0 z-[60] bg-asphalt flex flex-col items-center justify-center text-center p-6 safe-pad-t safe-pad-b"
+          id="rotate-overlay"
+        >
+          <RotateCcw className="w-12 h-12 text-secondary mb-4" />
+          <h2 className="text-2xl font-bold font-display text-text">Rotate your phone</h2>
+          <p className="text-muted text-sm mt-2 font-body">Neon Rush plays in landscape.</p>
+          <DebugLabel portrait={isPortrait} />
         </div>
       )}
     </div>

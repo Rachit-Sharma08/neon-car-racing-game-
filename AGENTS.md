@@ -38,6 +38,8 @@ BANNED: purple/pink/magenta, gradient text, decorative gradient backgrounds, glo
 glassmorphism cards, monospace "terminal" labels (e.g. "SYS // ..."), fake status text (ONLINE, ping),
 letter-spaced ALL-CAPS microcopy everywhere, emoji/generic icon-pack decoration.
 USE: arcade look - steel HUD panels, glossy flat buttons, red speed digits, daylight scenery.
+- The whole app is LANDSCAPE-ONLY, like the reference game - Main Menu, Garage, Game, everything.
+  In portrait the ONLY thing shown is a full-screen "Rotate your phone" screen.
 - All colours/fonts/spacing live in ONE tokens file (CSS variables). Never hardcode colours elsewhere.
 - Default tokens (Rachit may change): asphalt #14171c, steel #2a3038 / #3a424d, edge #5b6674, text #e8ecf1,
   muted #9aa5b1, primary action orange #ff8a00, secondary steel-blue #2f7fb8, danger #d93a2e.
@@ -71,6 +73,7 @@ USE: arcade look - steel HUD panels, glossy flat buttons, red speed digits, dayl
 - [x] Step 1: Audit codebase and fill the Stack section
 - [x] Step 2: Fix start flow (visible PLAY, fixed-height screens, landscape handling)
 - [x] Step 2.5: exit and interruption handling
+- [x] Step 2.6: landscape-only app and rotation
 - [ ] Step 3: Split App.tsx into modules (no behaviour change)
 - [ ] Step 4: Design tokens and restyle all screens
 - [ ] Step 5: Core gameplay (4 lanes, brake pedal, near-miss, HUD)
