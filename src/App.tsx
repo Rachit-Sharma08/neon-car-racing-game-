@@ -767,6 +767,23 @@ function DebugLabel({ portrait }: { portrait: boolean }) {
   );
 }
 
+/* ---------- PIXEL RATIO BUDGET (Step 2.8) ----------
+   Caps the device pixel ratio per device type and also keeps the total number of
+   rendered pixels under a budget, so 4K panels do not try to fill 8M+ pixels. */
+function getPixelRatio(width: number, height: number): number {
+  const coarse =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches;
+
+  const base = coarse ? 1.5 : 2;
+  const pixelBudget = coarse ? 2500000 : 5000000;
+  const area = Math.max(1, width * height);
+  const byBudget = Math.sqrt(pixelBudget / area);
+
+  return Math.max(0.75, Math.min(base, byBudget));
+}
+
 export default function App() {
   /* ---------- REACT STATE ---------- */
   const [gameState, setGameState] = useState<'title' | 'countdown' | 'playing' | 'gameover'>('title');
@@ -1114,7 +1131,7 @@ export default function App() {
       setWebglFailed(true);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(getPixelRatio(window.innerWidth, window.innerHeight));
     renderer.setClearColor(COLORS.bg, 1);
 
     // Dynamic resize handler using ResizeObserver (Constraint Checklist Item)
@@ -1123,6 +1140,8 @@ export default function App() {
       const { width, height } = entries[0].contentRect;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      // Step 2.8: re-budget the pixel ratio on every resize (rotation, window, monitor change).
+      renderer.setPixelRatio(getPixelRatio(width, height));
       renderer.setSize(width, height, false);
     });
     resizeObserver.observe(containerRef.current);
