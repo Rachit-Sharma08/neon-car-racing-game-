@@ -3655,7 +3655,7 @@ export default function App() {
                   <div className="w-full flex items-center justify-between gap-2 shrink-0">
                     <div className="flex items-center gap-2">
                       <button
-                        className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
+                        className="arcade-button w-12 h-12 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
                         onClick={() => setMuted(!muted)}
                         title={muted ? "Unmute audio" : "Mute audio"}
                         id="audio-toggle"
@@ -3664,7 +3664,7 @@ export default function App() {
                       </button>
                       {canFullscreen && (
                         <button
-                          className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
+                          className="arcade-button w-12 h-12 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
                           onClick={toggleFullscreen}
                           title={fullscreenOn ? "Exit fullscreen" : "Go fullscreen"}
                           id="btn-fullscreen-menu"
@@ -4074,7 +4074,7 @@ export default function App() {
                   <button
                     key={vehicle.id}
                     onClick={() => handleSelectVehicle(vehicle.id)}
-                    className={`p-2.5 rounded-ui border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`min-h-12 p-2.5 rounded-ui border text-left transition-all cursor-pointer flex flex-col justify-between ${
                       isActive 
                         ? 'bg-secondary/20 border-secondary text-text' 
                         : 'bg-steel border-edge text-muted hover:text-text'
@@ -4113,7 +4113,7 @@ export default function App() {
             {/* Close button */}
             <button
               onClick={() => setShowHelpModal(false)}
-              className="arcade-button absolute top-4 right-4 p-2 bg-steel border-edge text-muted cursor-pointer"
+              className="arcade-button absolute top-4 right-4 w-12 h-12 flex items-center justify-center bg-steel border-edge text-muted cursor-pointer"
               title="Close guide"
             >
               <X className="w-5 h-5" />
