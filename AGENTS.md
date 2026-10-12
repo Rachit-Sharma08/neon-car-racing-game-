@@ -94,7 +94,7 @@ The whole app is LANDSCAPE-ONLY and must work on:
 - [x] Step 2.5: exit and interruption handling
 - [x] Step 2.6: landscape-only app and rotation
 - [x] Step 2.7: cross-device audit
-- [ ] Step 2.8: cross-device fixes (from the audit)
+- [x] Step 2.8: cross-device fixes (from the audit)
 - [ ] Step 3A: real car models (Kenney Car Kit, CC0)
 - [ ] Step 3B: design redesign of Menu/Garage/HUD to match the reference (so far: 3a+3b done - tokens + daylight
   palette; left over: 3c help text still long, 3d no camera-button slot, 3e car/traffic/nitro colours still neon)
