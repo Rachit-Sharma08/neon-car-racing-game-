@@ -70,6 +70,7 @@ USE: arcade look - steel HUD panels, glossy flat buttons, red speed digits, dayl
 ## Progress log
 - [x] Step 1: Audit codebase and fill the Stack section
 - [x] Step 2: Fix start flow (visible PLAY, fixed-height screens, landscape handling)
+- [x] Step 2.5: exit and interruption handling
 - [ ] Step 3: Split App.tsx into modules (no behaviour change)
 - [ ] Step 4: Design tokens and restyle all screens
 - [ ] Step 5: Core gameplay (4 lanes, brake pedal, near-miss, HUD)

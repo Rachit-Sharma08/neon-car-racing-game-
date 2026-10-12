@@ -23,7 +23,10 @@ import {
   Sparkles,
   ChevronRight,
   X,
-  Car
+  Car,
+  Maximize,
+  Minimize,
+  Home
 } from 'lucide-react';
 
 /* ---------- AUDIO SYNTH ENGINE ---------- */
@@ -722,6 +725,8 @@ export default function App() {
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
   const [garageOpen, setGarageOpen] = useState<boolean>(false);
   const [isPortrait, setIsPortrait] = useState<boolean>(false);
+  const [fullscreenOn, setFullscreenOn] = useState<boolean>(false);
+  const [showQuitConfirm, setShowQuitConfirm] = useState<boolean>(false);
 
   /* ---------- REFS ---------- */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -733,11 +738,55 @@ export default function App() {
   const pausedRef = useRef<boolean>(false);
   // True when the app auto-paused the game because the phone is in portrait.
   const autoPausedRef = useRef<boolean>(false);
+  // Step 2.5 exit and interruption handling refs
+  const gameStateRef = useRef<'title' | 'countdown' | 'playing' | 'gameover'>('title');
+  const runPushedRef = useRef<boolean>(false);
+  const pauseRunRef = useRef<() => void>(() => {});
+  const goToMainMenuRef = useRef<() => void>(() => {});
 
   // Clean countdown timers on unmount
   const clearCountdownTimers = () => {
     countdownTimersRef.current.forEach(t => clearTimeout(t));
     countdownTimersRef.current = [];
+  };
+
+  const persistFullscreen = (on: boolean) => {
+    try { localStorage.setItem('neon_rush_fullscreen', on ? 'true' : 'false'); } catch {}
+  };
+
+  const enterFullscreen = () => {
+    try {
+      const root = document.documentElement;
+      if (typeof root.requestFullscreen !== 'function') return;
+      root.requestFullscreen().then(() => {
+        setFullscreenOn(true);
+        persistFullscreen(true);
+        try {
+          const orientation = screen.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
+          if (orientation && typeof orientation.lock === 'function') {
+            orientation.lock('landscape').catch(() => {});
+          }
+        } catch {}
+      }).catch(() => {});
+    } catch {}
+  };
+
+  const exitFullscreen = () => {
+    try {
+      if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch {}
+    setFullscreenOn(false);
+    persistFullscreen(false);
+  };
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      exitFullscreen();
+    } else {
+      enterFullscreen();
+    }
   };
 
   useEffect(() => {
@@ -832,7 +881,44 @@ export default function App() {
   };
 
   /* ---------- GAME ACTION TRIGGER HANDLERS ---------- */
+  const beginRun = () => {
+    if (runPushedRef.current) return;
+    try {
+      history.pushState({ game: true }, '');
+      runPushedRef.current = true;
+    } catch {}
+  };
+
+  const pauseRun = () => {
+    // Auto-pause / Back-button pause. Never auto-resumes: the player must press Resume.
+    if (gameState === 'countdown') {
+      clearCountdownTimers();
+    }
+    setPaused(true);
+  };
+  pauseRunRef.current = pauseRun;
+
+  const goToMainMenu = () => {
+    clearCountdownTimers();
+    runPushedRef.current = false;
+    setShowQuitConfirm(false);
+    setGarageOpen(false);
+    setShowHelpModal(false);
+    setPaused(false);
+    setGameState('title');
+    // Returning to the Main Menu exits fullscreen if active.
+    try {
+      if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch {}
+    setFullscreenOn(false);
+    persistFullscreen(false);
+  };
+  goToMainMenuRef.current = goToMainMenu;
+
   const startRaceCountdown = () => {
+    beginRun();
     clearCountdownTimers();
     synth.init();
     synth.startEngine();
@@ -889,26 +975,20 @@ export default function App() {
   startRaceCountdownRef.current = startRaceCountdown;
 
   const startGame = () => {
-    // Try to go fullscreen and lock landscape. Many browsers refuse one or both,
-    // so every failure is ignored silently.
-    try {
-      const root = document.documentElement;
-      if (typeof root.requestFullscreen === 'function') {
-        root.requestFullscreen().catch(() => {});
-      }
-      const orientation = screen.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
-      if (orientation && typeof orientation.lock === 'function') {
-        orientation.lock('landscape').catch(() => {});
-      }
-    } catch (e) {
-      // Ignore: fullscreen/orientation lock is optional.
-    }
     startRaceCountdown();
   };
 
   const restartGame = () => {
     setPaused(false);
     startRaceCountdown();
+  };
+
+  const resumeGame = () => {
+    if (gameState === 'countdown') {
+      startRaceCountdown();
+    } else {
+      setPaused(false);
+    }
   };
 
   // Setup Three.js Grid Engine
@@ -3134,10 +3214,71 @@ export default function App() {
 
   // Sync core Game State to Three Loop Ref on component state change
   useEffect(() => {
+    gameStateRef.current = gameState;
     if (gameLoopRef.current && typeof gameLoopRef.current.setExternalState === 'function') {
       gameLoopRef.current.setExternalState(gameState);
     }
   }, [gameState]);
+
+  // Exit / interruption handling:
+  //  - auto-pause when the app loses focus or the tab is hidden (never auto-resumes)
+  //  - Android Back button pauses the run instead of leaving the page
+  useEffect(() => {
+    const inRun = () => {
+      const st = gameStateRef.current;
+      return st === 'playing' || st === 'countdown';
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden && inRun() && !pausedRef.current) {
+        pauseRunRef.current();
+      }
+    };
+
+    const onWindowBlur = () => {
+      if (inRun() && !pausedRef.current) {
+        pauseRunRef.current();
+      }
+    };
+
+    const onFullscreenChange = () => {
+      const on = !!document.fullscreenElement;
+      setFullscreenOn(on);
+      try {
+        localStorage.setItem('neon_rush_fullscreen', on ? 'true' : 'false');
+      } catch {}
+      if (!on && inRun() && !pausedRef.current) {
+        pauseRunRef.current();
+      }
+    };
+
+    const onPopState = () => {
+      const st = gameStateRef.current;
+      if (st === 'playing' || st === 'countdown') {
+        if (pausedRef.current) {
+          setShowQuitConfirm(true);
+        } else {
+          try {
+            history.pushState({ game: true }, '');
+          } catch {}
+          pauseRunRef.current();
+        }
+      } else if (st === 'gameover') {
+        goToMainMenuRef.current();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onWindowBlur);
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('blur', onWindowBlur);
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
 
   const activeVehicle = VEHICLES.find(v => v.id === selectedVehicleId) || VEHICLES[0];
   const progressToObjective = Math.min(100, Math.floor((dodgeCount / 15) * 100));
@@ -3229,7 +3370,7 @@ export default function App() {
             </div>
 
             {/* --- OVERLAY: STARTING RACE COUNTDOWN ANIMATION --- */}
-            {gameState === 'countdown' && (
+            {gameState === 'countdown' && !paused && (
               <div className="absolute inset-0 bg-asphalt/85 flex flex-col items-center justify-center pointer-events-none z-30 select-none animate-fade-in" id="starting-countdown-overlay">
                 {/* 3-Gantry Starting Lights */}
                 <div className="arcade-panel flex items-center gap-4 px-6 py-3 mb-6">
@@ -3283,9 +3424,9 @@ export default function App() {
             )}
 
             {/* --- OVERLAY: PAUSED SCREEN --- */}
-            {paused && gameState === 'playing' && !needsRotate && (
+            {paused && (gameState === 'playing' || gameState === 'countdown') && !needsRotate && (
               <div className="absolute inset-0 bg-asphalt/90 flex flex-col items-center justify-center p-6 text-center z-20 pointer-events-auto" id="paused-screen-overlay">
-                <div className="arcade-panel max-w-md w-full animate-fade-in p-6">
+                <div className="arcade-panel max-w-md w-full animate-fade-in p-6 max-h-[92vh] overflow-y-auto">
                   <h2 className="text-4xl sm:text-5xl font-bold text-text font-display">
                     Paused
                   </h2>
@@ -3303,25 +3444,69 @@ export default function App() {
                       <div className="hud-number text-xl font-bold text-speed font-display">{Math.round(speed * 6.5)} km/h</div>
                     </div>
                   </div>
-                  
+
                   <div className="mt-5 flex flex-col gap-2.5">
                     <button 
-                      onClick={() => setPaused(false)}
+                      onClick={resumeGame}
                       className="arcade-button w-full py-3.5 bg-primary text-asphalt font-bold cursor-pointer text-sm font-display flex items-center justify-center gap-2"
+                      id="btn-resume"
                     >
                       <Play className="w-4 h-4 fill-current" /> Resume
                     </button>
                     <button 
                       onClick={restartGame}
                       className="arcade-button w-full py-3 bg-steel text-text font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-2"
+                      id="btn-restart"
                     >
                       <RotateCcw className="w-3.5 h-3.5" /> Restart
+                    </button>
+                    <button 
+                      onClick={toggleFullscreen}
+                      className="arcade-button w-full py-2.5 bg-steel text-muted font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-1.5"
+                      id="btn-fullscreen-pause"
+                    >
+                      {fullscreenOn ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
+                      {fullscreenOn ? 'Exit fullscreen' : 'Fullscreen'}
+                    </button>
+                    <button 
+                      onClick={() => setShowQuitConfirm(true)}
+                      className="arcade-button w-full py-2.5 bg-steel text-text font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-1.5"
+                      id="btn-quit-to-menu"
+                    >
+                      <Home className="w-3.5 h-3.5" /> Main menu
                     </button>
                     <button 
                       onClick={() => setShowHelpModal(true)}
                       className="arcade-button w-full py-2.5 bg-steel text-muted font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-1.5"
                     >
                       <HelpCircle className="w-3.5 h-3.5" /> Game guide
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* --- OVERLAY: QUIT CONFIRM (from pause menu) --- */}
+            {showQuitConfirm && (
+              <div className="absolute inset-0 bg-asphalt/90 flex items-center justify-center p-6 text-center z-50" id="quit-confirm-overlay">
+                <div className="arcade-panel max-w-sm w-full animate-fade-in p-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-text font-display">
+                    Quit this run?
+                  </h2>
+                  <div className="mt-5 flex flex-col sm:flex-row gap-2.5 justify-center">
+                    <button
+                      onClick={() => setShowQuitConfirm(false)}
+                      className="arcade-button w-full sm:w-auto px-6 py-3 bg-steel text-text font-semibold cursor-pointer text-sm font-body"
+                      id="btn-quit-cancel"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={goToMainMenu}
+                      className="arcade-button w-full sm:w-auto px-6 py-3 bg-primary text-asphalt font-bold cursor-pointer text-sm font-display"
+                      id="btn-quit-confirm"
+                    >
+                      Quit
                     </button>
                   </div>
                 </div>
@@ -3338,14 +3523,24 @@ export default function App() {
 
                   {/* Audio toggle and driver name (moved out of the removed nav bar) */}
                   <div className="w-full flex items-center justify-between gap-2">
-                    <button
-                      className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
-                      onClick={() => setMuted(!muted)}
-                      title={muted ? "Unmute audio" : "Mute audio"}
-                      id="audio-toggle"
-                    >
-                      {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
+                        onClick={() => setMuted(!muted)}
+                        title={muted ? "Unmute audio" : "Mute audio"}
+                        id="audio-toggle"
+                      >
+                        {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                      </button>
+                      <button
+                        className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
+                        onClick={toggleFullscreen}
+                        title={fullscreenOn ? "Exit fullscreen" : "Go fullscreen"}
+                        id="btn-fullscreen-menu"
+                      >
+                        {fullscreenOn ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                      </button>
+                    </div>
                     {isEditingName ? (
                       <div className="flex items-center gap-1">
                         <input
@@ -3467,7 +3662,7 @@ export default function App() {
                       <RotateCcw className="w-4 h-4" /> Play again
                     </button>
                     <button 
-                      onClick={() => setGameState('title')}
+                      onClick={goToMainMenu}
                       className="arcade-button w-full sm:w-auto px-6 py-3.5 bg-steel text-text font-semibold cursor-pointer text-sm font-body"
                     >
                       Main menu
