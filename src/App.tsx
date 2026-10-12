@@ -3421,7 +3421,7 @@ export default function App() {
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" id="gameCanvas" />
 
             {/* --- IN-GAME OVERLAY STATS / HUD --- */}
-            <div className={`absolute inset-x-0 top-0 p-3 sm:p-5 pointer-events-none flex flex-col gap-3 font-body transition-all duration-300 ${gameState === 'playing' ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`absolute inset-x-0 top-0 p-3 sm:p-5 pointer-events-none flex flex-col gap-3 font-body transition-all duration-300 safe-pad-l safe-pad-r ${gameState === 'playing' ? 'opacity-100' : 'opacity-0'}`}>
               
               {/* Top Row: Distance & Pause, Center Nitro Status, Right: Speed & Score */}
               <div className="flex justify-between items-start w-full">
@@ -3549,7 +3549,7 @@ export default function App() {
 
             {/* --- OVERLAY: PAUSED SCREEN --- */}
             {paused && (gameState === 'playing' || gameState === 'countdown') && (
-              <div className="absolute inset-0 bg-asphalt/90 flex flex-col items-center justify-center p-6 text-center z-20 pointer-events-auto" id="paused-screen-overlay">
+              <div className="absolute inset-0 bg-asphalt/90 flex flex-col items-center justify-center p-6 text-center z-20 pointer-events-auto safe-pad-l safe-pad-r" id="paused-screen-overlay">
                 <div className="arcade-panel max-w-md w-full animate-fade-in p-6 max-h-[92vh] overflow-y-auto">
                   <h2 className="text-4xl sm:text-5xl font-bold text-text font-display">
                     Paused
@@ -3642,7 +3642,7 @@ export default function App() {
             {/* --- OVERLAY: MAIN MENU (Step 2.6: landscape-first, fits 915x412 and 800x360) --- */}
             {gameState === 'title' && (
               <div
-                className="absolute inset-0 bg-asphalt/85 flex flex-col z-10 overflow-y-auto safe-pad-t safe-pad-b"
+                className="absolute inset-0 bg-asphalt/85 flex flex-col z-10 overflow-y-auto safe-pad-t safe-pad-b safe-pad-l safe-pad-r"
                 id="title-screen-overlay"
               >
                 <div className="w-full max-w-3xl mx-auto flex flex-col h-full px-3 py-2 sm:px-6 sm:py-3">
@@ -3812,7 +3812,7 @@ export default function App() {
             {gameState === 'playing' && (
               <div 
                 key="on-screen-steering-controls"
-                className="absolute inset-x-0 bottom-3 sm:bottom-6 px-3 sm:px-8 flex justify-between items-center pointer-events-none z-10 select-none animate-hud-slide-bottom" 
+                className="absolute inset-x-0 bottom-3 sm:bottom-6 px-3 sm:px-8 flex justify-between items-center pointer-events-none z-10 select-none animate-hud-slide-bottom safe-pad-l safe-pad-r" 
                 id="on-screen-steering"
               >
                 
@@ -3885,7 +3885,7 @@ export default function App() {
 
       {/* --- GARAGE OVERLAY (temporary car picker; real Garage arrives in Step 7) --- */}
       {garageOpen && (
-        <div className="absolute inset-0 z-40 bg-asphalt flex flex-col safe-pad-t safe-pad-b" id="garage-overlay">
+        <div className="absolute inset-0 z-40 bg-asphalt flex flex-col safe-pad-t safe-pad-b safe-pad-l safe-pad-r" id="garage-overlay">
           <div className="flex items-center justify-between py-2 px-3 sm:px-4 border-b border-edge shrink-0">
             <h2 className="text-lg font-bold font-display text-text">Garage</h2>
             <button
