@@ -3408,7 +3408,11 @@ export default function App() {
   const progressToObjective = Math.min(100, Math.floor((dodgeCount / 15) * 100));
 
   return (
-    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-asphalt text-text font-body select-none" id="root-container">
+    <div
+      className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-asphalt text-text font-body select-none"
+      id="root-container"
+      onContextMenu={(e) => e.preventDefault()}
+    >
 
       {/* ---------- FULL-SCREEN 3D GAMEPLAY VIEW (canvas fills the whole screen) ---------- */}
       <section className="absolute inset-0" id="gameplay-viewport">
@@ -3433,7 +3437,7 @@ export default function App() {
                 >
                   <button 
                     onClick={() => setPaused(!paused)}
-                    className="arcade-button w-10 h-10 sm:w-11 sm:h-11 bg-steel border-edge text-text transition-all flex items-center justify-center cursor-pointer active:scale-95"
+                    className="arcade-button w-12 h-12 sm:w-12 sm:h-12 bg-steel border-edge text-text transition-all flex items-center justify-center cursor-pointer active:scale-95"
                     title={paused ? "Resume Drive (P)" : "Pause Drive (P)"}
                     id="hud-pause-btn"
                   >
@@ -3812,7 +3816,7 @@ export default function App() {
             {gameState === 'playing' && (
               <div 
                 key="on-screen-steering-controls"
-                className="absolute inset-x-0 bottom-3 sm:bottom-6 px-3 sm:px-8 flex justify-between items-center pointer-events-none z-10 select-none animate-hud-slide-bottom safe-pad-l safe-pad-r" 
+                className="on-screen-controls absolute inset-x-0 bottom-3 sm:bottom-6 px-3 sm:px-8 flex justify-between items-center pointer-events-none z-10 select-none animate-hud-slide-bottom safe-pad-l safe-pad-r" 
                 id="on-screen-steering"
               >
                 

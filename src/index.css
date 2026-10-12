@@ -50,6 +50,16 @@ canvas {
   touch-action: none;
 }
 
+/* Step 2.8: on-screen control buttons must not scroll, zoom, select text or
+   trigger the iOS long-press callout while the player holds gas / steers. */
+.on-screen-controls button {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Safe-area padding for notched phones in portrait/landscape. */
 .safe-pad-t { padding-top: max(0.75rem, env(safe-area-inset-top)); }
 .safe-pad-b { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
