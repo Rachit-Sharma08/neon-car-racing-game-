@@ -9,8 +9,7 @@ Owner: Rachit (beginner-to-intermediate, hand-codes parts himself). Explain what
 3. Before editing: list the files you will touch. After editing: list what changed and what you could NOT verify.
 4. Do not add new dependencies without asking. Prefer what the project already uses.
 5. Work in small commits with clear messages (e.g. `fix(menu): visible PLAY button on 360x640`).
-6. If a task is design-heavy (new visual style, 3D car models, scenery art, complex layout), STOP and write
-   "DESIGN HANDOFF NEEDED" plus a short brief. Rachit will use Codex/Antigravity for that part.
+6. Design-heavy tasks (new visual style, 3D car models, scenery art, complex layouts) are done by Codex or Antigravity. If you are opencode / the Step model: STOP on such a task and write "DESIGN HANDOFF NEEDED" plus a short brief. If you are Codex or Antigravity: you ARE the design tool, so do the task, following all other rules.
 7. Update the "Progress log" at the bottom of this file after each finished step.
 8. Use npm only (pnpm shim is broken on this machine). Never print or commit secrets from .env.
 
@@ -77,3 +76,4 @@ USE: arcade look - steel HUD panels, glossy flat buttons, red speed digits, dayl
 - [ ] Step 6: Maps and scenery
 - [ ] Step 7: Garage, upgrades, save system, rename BMW E34 to a generic name
 - [ ] Step 8: Settings, revive flow, remove unused deps (@google/genai, express, dotenv), performance pass
+- Step 3 (new look restyle): 3a done, 3b done. Not finished: 3c mostly done (all screens token-restyled, help text still long), 3d red km/h fixed but no camera-button slot yet, 3e zones are daylight but car/traffic/nitro colours are still neon (constants only).

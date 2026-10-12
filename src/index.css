@@ -1,10 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap');
 @import "tailwindcss";
-
-@theme {
-  --font-orbitron: "Orbitron", sans-serif;
-  --font-rajdhani: "Rajdhani", sans-serif;
-}
+@import "./styles/tokens.css";
 
 @keyframes hud-jitter-subtle {
   0%, 100% { transform: translate(0, 0) scale(1); }
@@ -24,14 +19,9 @@
   90% { transform: translate(1px, -1px) scale(1.04); }
 }
 
-@keyframes speed-pulse-glow {
-  0%, 100% { box-shadow: 0 0 15px rgba(255, 69, 0, 0.4), inset 0 0 10px rgba(255, 69, 0, 0.2); }
-  50% { box-shadow: 0 0 28px rgba(255, 69, 0, 0.8), inset 0 0 18px rgba(255, 46, 196, 0.4); }
-}
-
 @keyframes nitro-flame-pulse {
   0%, 100% { opacity: 0.85; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); filter: drop-shadow(0 0 12px #00f0ff); }
+  50% { opacity: 1; transform: scale(1.08); }
 }
 
 /* ---------- MOBILE APP SHELL (Step 2: fixed screen, no page scroll) ---------- */
@@ -50,6 +40,9 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
+  background: var(--color-asphalt);
+  color: var(--color-text);
+  font-family: var(--font-body);
 }
 
 canvas {
@@ -71,10 +64,6 @@ canvas {
   animation: hud-jitter-intense 0.1s infinite linear;
 }
 
-.animate-speed-pulse {
-  animation: speed-pulse-glow 0.8s infinite ease-in-out;
-}
-
 .animate-nitro-pulse {
   animation: nitro-flame-pulse 0.2s infinite ease-in-out;
 }
@@ -92,7 +81,7 @@ canvas {
 
 @keyframes light-beacon-glow {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); filter: drop-shadow(0 0 16px currentColor); }
+  50% { transform: scale(1.08); }
 }
 
 .animate-beacon-glow {
@@ -104,7 +93,6 @@ canvas {
   0% {
     opacity: 0;
     transform: translate3d(-38px, 0, 0);
-    filter: drop-shadow(-8px 0 12px rgba(0, 240, 255, 0.35));
   }
   65% {
     opacity: 0.95;
@@ -116,7 +104,6 @@ canvas {
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0);
-    filter: drop-shadow(0 0 0 rgba(0, 240, 255, 0));
   }
 }
 
@@ -124,7 +111,6 @@ canvas {
   0% {
     opacity: 0;
     transform: translate3d(38px, 0, 0);
-    filter: drop-shadow(8px 0 12px rgba(255, 46, 196, 0.35));
   }
   65% {
     opacity: 0.95;
@@ -136,7 +122,6 @@ canvas {
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0);
-    filter: drop-shadow(0 0 0 rgba(255, 46, 196, 0));
   }
 }
 
@@ -144,7 +129,6 @@ canvas {
   0% {
     opacity: 0;
     transform: translate3d(0, -24px, 0);
-    filter: drop-shadow(0 -6px 12px rgba(0, 240, 255, 0.3));
   }
   70% {
     opacity: 0.95;
@@ -153,7 +137,6 @@ canvas {
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0);
-    filter: drop-shadow(0 0 0 transparent);
   }
 }
 
@@ -190,4 +173,197 @@ canvas {
 .animate-hud-slide-bottom {
   animation: hud-slide-in-bottom 0.62s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
   will-change: transform, opacity;
+}
+
+/* ---------- STEP 3: CLASSIC ARCADE UI OVERRIDES ---------- */
+#root-container {
+  background: var(--color-asphalt) !important;
+  color: var(--color-text) !important;
+  font-family: var(--font-body) !important;
+}
+
+#root-container .font-orbitron,
+#root-container .font-mono,
+#root-container .font-rajdhani {
+  font-family: var(--font-display) !important;
+  letter-spacing: normal !important;
+}
+
+#root-container .bg-gradient-to-r {
+  background-image: none !important;
+  background-color: var(--color-primary) !important;
+  color: var(--color-asphalt) !important;
+}
+
+#title-screen-overlay,
+#gameover-screen-overlay,
+#rotate-overlay,
+#paused-screen-overlay,
+#starting-countdown-overlay {
+  background: color-mix(in srgb, var(--color-asphalt) 92%, transparent) !important;
+  backdrop-filter: none !important;
+}
+
+#title-screen-overlay {
+  background: color-mix(in srgb, var(--color-asphalt) 68%, transparent) !important;
+}
+
+#garage-overlay {
+  background: var(--color-asphalt) !important;
+}
+
+#title-screen-overlay > div,
+#gameover-screen-overlay > div,
+#paused-screen-overlay > div,
+#garage-overlay > div,
+#rotate-overlay,
+#starting-countdown-overlay > div {
+  font-family: var(--font-body);
+}
+
+#title-screen-overlay h1,
+#gameover-screen-overlay h2,
+#paused-screen-overlay h2,
+#rotate-overlay h2 {
+  color: var(--color-text) !important;
+  font-family: var(--font-display) !important;
+  font-style: normal !important;
+  text-shadow: none !important;
+}
+
+#title-screen-overlay button,
+#gameover-screen-overlay button,
+#paused-screen-overlay button,
+#garage-overlay button,
+#rotate-overlay button,
+#root-container [id^="hud-"] button {
+  min-height: var(--button-min-height);
+  border-radius: var(--radius-ui) !important;
+  box-shadow: var(--panel-shadow) !important;
+}
+
+#title-screen-overlay button[id="btn-engage-engine"],
+#gameover-screen-overlay button:first-of-type,
+#paused-screen-overlay button:first-of-type {
+  background: var(--color-primary) !important;
+  color: var(--color-asphalt) !important;
+  border-color: color-mix(in srgb, var(--color-asphalt) 45%, transparent) !important;
+}
+
+#title-screen-overlay button:not([id="btn-engage-engine"]),
+#gameover-screen-overlay button:not(:first-of-type),
+#paused-screen-overlay button:not(:first-of-type),
+#garage-overlay button {
+  background: var(--color-steel) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-edge) !important;
+}
+
+#hud-score-display > div,
+#hud-speed-display,
+#hud-pause-btn {
+  background: var(--color-steel) !important;
+  border-color: var(--color-edge) !important;
+  box-shadow: var(--panel-shadow) !important;
+  color: var(--color-text) !important;
+  border-radius: var(--radius-ui) !important;
+}
+
+#hud-score-display .text-\[9px\],
+#hud-speed-display .text-\[9px\] {
+  color: var(--color-muted) !important;
+  letter-spacing: 0.04em !important;
+}
+
+#hud-score-display .text-xl,
+#hud-speed-display .text-sm,
+#radial-speed-gauge-container text {
+  font-variant-numeric: tabular-nums;
+}
+
+#radial-speed-gauge-container {
+  transform: scale(0.78);
+  transform-origin: top center;
+  height: 94px;
+  margin-bottom: -24px;
+}
+
+#radial-speed-gauge-container svg * {
+  filter: none !important;
+}
+
+#radial-speed-gauge-container text {
+  fill: var(--color-speed) !important;
+  font-family: var(--font-display) !important;
+}
+
+#radial-speed-gauge-container circle,
+#radial-speed-gauge-container line,
+#radial-speed-gauge-container path {
+  stroke: var(--color-edge) !important;
+}
+
+#radial-speed-gauge-container circle[fill],
+#radial-speed-gauge-container text[font-size="17"] {
+  fill: var(--color-speed) !important;
+}
+
+#garage-overlay .bg-gradient-to-r,
+#garage-overlay [class*="shadow-"] {
+  box-shadow: none !important;
+}
+
+#garage-overlay .aspect-video {
+  background: var(--color-steel) !important;
+  border-color: var(--color-edge) !important;
+}
+
+#garage-overlay .aspect-video > .absolute,
+#garage-overlay svg [class*="animate"] {
+  display: none !important;
+  animation: none !important;
+}
+
+#garage-overlay h3,
+#garage-overlay h3 svg,
+#garage-overlay h4 + div,
+#garage-overlay [class*="text-\[\#ff2ec4\]"] {
+  color: var(--color-primary) !important;
+}
+
+#garage-overlay [class*="text-\[\#00f0ff\]"],
+#garage-overlay [class*="bg-\[\#00f0ff\]"],
+#garage-overlay [class*="border-\[\#00f0ff\]"] {
+  color: var(--color-secondary) !important;
+  border-color: var(--color-secondary) !important;
+}
+
+#starting-countdown-overlay > div:first-child,
+#starting-countdown-overlay > div:last-child {
+  background: var(--color-steel) !important;
+  border-color: var(--color-edge) !important;
+  box-shadow: var(--panel-shadow) !important;
+}
+
+#starting-countdown-overlay [class*="shadow-"],
+#starting-countdown-overlay [class*="drop-shadow"] {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+#starting-countdown-overlay .text-8xl,
+#starting-countdown-overlay .text-9xl {
+  color: var(--color-primary) !important;
+  font-style: normal !important;
+}
+
+#starting-countdown-overlay .text-lg,
+#starting-countdown-overlay .text-2xl {
+  letter-spacing: 0.04em !important;
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  #rotate-overlay {
+    background: var(--color-asphalt) !important;
+  }
 }

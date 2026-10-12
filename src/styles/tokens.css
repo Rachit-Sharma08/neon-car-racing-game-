@@ -1,0 +1,55 @@
+@theme {
+  --color-asphalt: #14171c;
+  --color-steel: #2a3038;
+  --color-steel-light: #3a424d;
+  --color-edge: #5b6674;
+  --color-text: #e8ecf1;
+  --color-muted: #9aa5b1;
+  --color-primary: #ff8a00;
+  --color-secondary: #2f7fb8;
+  --color-danger: #d93a2e;
+  --color-go: #3fa34d;
+  --color-speed: #e53935;
+  --color-road-line: #f4f2e8;
+  --color-road-yellow: #f3c64e;
+  --color-sky: #8dc7e8;
+  --color-grass: #6c8748;
+  --color-sand: #d8be89;
+  --font-display: "Rajdhani", sans-serif;
+  --font-body: "Barlow", sans-serif;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --radius-ui: 6px;
+}
+
+:root {
+  --button-min-height: 48px;
+  --panel-shadow: 0 3px 0 color-mix(in srgb, var(--color-asphalt) 65%, transparent);
+}
+
+.arcade-panel {
+  background: color-mix(in srgb, var(--color-steel) 95%, transparent);
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-ui);
+  box-shadow: var(--panel-shadow);
+}
+
+.arcade-button {
+  min-height: var(--button-min-height);
+  border: 1px solid color-mix(in srgb, var(--color-asphalt) 45%, transparent);
+  border-radius: var(--radius-ui);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 20%, transparent), var(--panel-shadow);
+  transition: filter 120ms ease, transform 120ms ease;
+}
+
+.arcade-button:active {
+  filter: brightness(0.88);
+  transform: translateY(1px);
+}
+
+.hud-number {
+  font-variant-numeric: tabular-nums;
+}

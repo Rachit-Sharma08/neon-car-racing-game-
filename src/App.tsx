@@ -429,35 +429,27 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
       >
         <defs>
           <linearGradient id="radialSpeedGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#00f0ff" />
-            <stop offset="45%" stopColor="#00f0ff" />
-            <stop offset="70%" stopColor="#ffb703" />
-            <stop offset="88%" stopColor="#ff4500" />
-            <stop offset="100%" stopColor="#ff2ec4" />
+            <stop offset="0%" style={{ stopColor: 'var(--color-secondary)' }} />
+            <stop offset="45%" style={{ stopColor: 'var(--color-secondary)' }} />
+            <stop offset="70%" style={{ stopColor: 'var(--color-primary)' }} />
+            <stop offset="88%" style={{ stopColor: 'var(--color-danger)' }} />
+            <stop offset="100%" style={{ stopColor: 'var(--color-speed)' }} />
           </linearGradient>
 
           <linearGradient id="boostGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff2ec4" />
-            <stop offset="50%" stopColor="#00f0ff" />
-            <stop offset="100%" stopColor="#fffb00" />
+            <stop offset="0%" style={{ stopColor: 'var(--color-primary)' }} />
+            <stop offset="50%" style={{ stopColor: 'var(--color-primary)' }} />
+            <stop offset="100%" style={{ stopColor: 'var(--color-speed)' }} />
           </linearGradient>
-
-          <filter id="gaugeNeonGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
-        {/* Outer subtle decorative frame ring */}
+        {/* Outer subtle frame ring */}
         <circle 
           cx={cx} 
           cy={cy} 
           r="73" 
           fill="none" 
-          stroke="rgba(0, 240, 255, 0.12)" 
+          className="stroke-edge" 
           strokeWidth="1" 
           strokeDasharray="4 6" 
         />
@@ -476,7 +468,7 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
             <path
               d={`M ${x1} ${y1} A ${rOuter} ${rOuter} 0 0 1 ${x2} ${y2}`}
               fill="none"
-              stroke={isBoosting ? '#ff2ec4' : currentKmh > 220 ? '#ff0055' : 'rgba(255, 0, 85, 0.45)'}
+              stroke={isBoosting ? 'var(--color-primary)' : 'var(--color-danger)'}
               strokeWidth="2.5"
               strokeDasharray="3 3"
               className={currentKmh > 220 ? 'animate-pulse' : ''}
@@ -500,8 +492,8 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
 
           const isRedline = t.kmh >= 240;
           const tickColor = isPassed
-            ? (isBoosting ? '#ff2ec4' : isRedline ? '#ff0055' : t.kmh > 150 ? '#ffb703' : '#00f0ff')
-            : 'rgba(255, 255, 255, 0.25)';
+            ? (isBoosting ? 'var(--color-primary)' : isRedline ? 'var(--color-danger)' : t.kmh > 150 ? 'var(--color-primary)' : 'var(--color-secondary)')
+            : 'var(--color-edge)';
 
           return (
             <g key={t.kmh}>
@@ -519,8 +511,8 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
                 y={yt} 
                 textAnchor="middle" 
                 fontSize="6" 
-                fontFamily="var(--font-orbitron), Orbitron, monospace" 
-                fill={isPassed ? (isRedline ? '#ff0055' : '#00f0ff') : 'rgba(255,255,255,0.35)'} 
+                fontFamily="var(--font-display), sans-serif" 
+                fill={isPassed ? (isRedline ? 'var(--color-danger)' : 'var(--color-secondary)') : 'var(--color-muted)'} 
                 fontWeight={isPassed ? 'bold' : 'normal'}
               >
                 {t.label}
@@ -545,7 +537,7 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
               y1={y1} 
               x2={x2} 
               y2={y2} 
-              stroke={isPassed ? '#00f0ff88' : 'rgba(255,255,255,0.12)'} 
+              stroke={isPassed ? 'var(--color-secondary)' : 'var(--color-edge)'} 
               strokeWidth="1" 
               strokeLinecap="round" 
             />
@@ -558,7 +550,7 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
           cy={cy}
           r={radius}
           fill="none"
-          stroke="rgba(255, 255, 255, 0.08)"
+          stroke="var(--color-edge)"
           strokeWidth="7"
           strokeDasharray={`${totalArc} ${circumference}`}
           strokeLinecap="round"
@@ -576,27 +568,17 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
           strokeDasharray={`${filledArc} ${circumference}`}
           strokeLinecap="round"
           transform={`rotate(150 ${cx} ${cy})`}
-          style={{ 
-            transition: 'stroke-dasharray 0.08s ease-out',
-            filter: isBoosting 
-              ? 'drop-shadow(0 0 10px #ff2ec4)' 
-              : currentKmh > 180 
-                ? 'drop-shadow(0 0 8px #ff4500)' 
-                : 'drop-shadow(0 0 6px #00f0ff)'
-          }}
+          style={{ transition: 'stroke-dasharray 0.08s ease-out' }}
         />
 
-        {/* Glowing Head Node at the current speed tip of the arc */}
+        {/* Head node at the current speed tip of the arc */}
         {filledArc > 1 && (
           <circle
             cx={cx + radius * Math.cos(needleRad)}
             cy={cy + radius * Math.sin(needleRad)}
             r={isBoosting ? "4" : "3.2"}
-            fill="#ffffff"
-            style={{ 
-              filter: `drop-shadow(0 0 8px ${isBoosting ? '#ff2ec4' : currentKmh > 180 ? '#ff4500' : '#00f0ff'})`,
-              transition: 'cx 0.08s ease-out, cy 0.08s ease-out'
-            }}
+            className="fill-text"
+            style={{ transition: 'cx 0.08s ease-out, cy 0.08s ease-out' }}
           />
         )}
 
@@ -614,12 +596,9 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
             y1={cy}
             x2={cx + radius - 2}
             y2={cy}
-            stroke={isBoosting ? '#ff2ec4' : currentKmh > 180 ? '#ff4500' : '#00f0ff'}
+            stroke={isBoosting ? 'var(--color-primary)' : 'var(--color-secondary)'}
             strokeWidth="2.5"
             strokeLinecap="round"
-            style={{ 
-              filter: `drop-shadow(0 0 6px ${isBoosting ? '#ff2ec4' : currentKmh > 180 ? '#ff4500' : '#00f0ff'})` 
-            }}
           />
           {/* Counterweight */}
           <line
@@ -627,7 +606,7 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
             y1={cy}
             x2={cx - 4}
             y2={cy}
-            stroke="rgba(255,255,255,0.3)"
+            stroke="var(--color-edge)"
             strokeWidth="2.5"
             strokeLinecap="round"
           />
@@ -638,17 +617,14 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
           cx={cx} 
           cy={cy} 
           r="36" 
-          fill="#070810" 
-          stroke={isBoosting ? '#ff2ec4' : currentKmh > 180 ? '#ff4500' : 'rgba(0, 240, 255, 0.35)'} 
+          className="fill-asphalt" 
+          stroke={isBoosting ? 'var(--color-primary)' : 'var(--color-edge)'} 
           strokeWidth="1.5"
-          style={{
-            filter: isBoosting ? 'drop-shadow(0 0 10px rgba(255, 46, 196, 0.3))' : 'none'
-          }}
         />
 
         {/* Center Pivot Point */}
-        <circle cx={cx} cy={cy} r="4" fill="#141724" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-        <circle cx={cx} cy={cy} r="1.5" fill={isBoosting ? '#ff2ec4' : '#00f0ff'} />
+        <circle cx={cx} cy={cy} r="4" className="fill-steel" stroke="var(--color-edge)" strokeWidth="1" />
+        <circle cx={cx} cy={cy} r="1.5" fill={isBoosting ? 'var(--color-primary)' : 'var(--color-secondary)'} />
 
         {/* Digital Speed Number */}
         <text
@@ -657,11 +633,8 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
           textAnchor="middle"
           fontSize="17"
           fontWeight="900"
-          fontFamily="var(--font-orbitron), Orbitron, monospace"
-          fill={isBoosting ? '#ff2ec4' : currentKmh > 180 ? '#ff4500' : '#ffffff'}
-          style={{
-            filter: isBoosting ? 'drop-shadow(0 0 8px rgba(255,46,196,0.8))' : 'drop-shadow(0 0 6px rgba(0,240,255,0.5))'
-          }}
+          fontFamily="var(--font-display), sans-serif"
+          fill={isBoosting || currentKmh > 180 ? 'var(--color-speed)' : 'var(--color-text)'}
         >
           {currentKmh}
         </text>
@@ -673,9 +646,8 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
           textAnchor="middle"
           fontSize="7"
           fontWeight="bold"
-          fontFamily="var(--font-orbitron), Orbitron, monospace"
-          fill="#00f0ff"
-          letterSpacing="0.15em"
+          fontFamily="var(--font-display), sans-serif"
+          fill="var(--color-muted)"
         >
           KM/H
         </text>
@@ -687,26 +659,25 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
           textAnchor="middle"
           fontSize="6"
           fontWeight="600"
-          fontFamily="monospace"
-          fill={isBoosting ? '#ff2ec4' : 'rgba(255,255,255,0.6)'}
-          letterSpacing="0.08em"
+          fontFamily="var(--font-body), sans-serif"
+          fill={isBoosting ? 'var(--color-primary)' : 'var(--color-muted)'}
         >
-          {isBoosting ? '⚡ NITRO' : `${Math.round(speedRatio * 100)}% MAX`}
+          {isBoosting ? 'NITRO' : `${Math.round(speedRatio * 100)}% MAX`}
         </text>
       </svg>
 
       {/* Visual bottom acceleration status */}
       <div className="flex items-center gap-1.5 mt-0.5">
-        <span className={`text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 rounded-full border ${
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-ui border ${
           isBoosting 
-            ? 'bg-[#ff2ec4]/20 border-[#ff2ec4] text-white animate-pulse' 
+            ? 'bg-primary border-primary text-asphalt' 
             : currentKmh > 180 
-              ? 'bg-[#ff4500]/20 border-[#ff4500] text-[#ff4500]' 
+              ? 'bg-danger/20 border-danger text-danger' 
               : currentKmh > 90 
-                ? 'bg-[#00f0ff]/10 border-[#00f0ff]/40 text-[#00f0ff]' 
-                : 'bg-white/5 border-white/10 text-white/40'
+                ? 'bg-secondary/20 border-secondary text-secondary' 
+                : 'bg-steel border-edge text-muted'
         }`}>
-          {isBoosting ? 'OVERDRIVE ACTIVE' : currentKmh > 180 ? 'HIGH VELOCITY' : currentKmh > 90 ? 'CRUISE MODE' : 'ACCELERATING'}
+          {isBoosting ? 'Overdrive' : currentKmh > 180 ? 'High speed' : currentKmh > 90 ? 'Cruising' : 'Accelerating'}
         </span>
       </div>
     </div>
@@ -717,7 +688,7 @@ export default function App() {
   /* ---------- REACT STATE ---------- */
   const [gameState, setGameState] = useState<'title' | 'countdown' | 'playing' | 'gameover'>('title');
   const [countdownVal, setCountdownVal] = useState<'3' | '2' | '1' | 'GO!' | ''>('3');
-  const [countdownSubtext, setCountdownSubtext] = useState<string>('GET READY');
+  const [countdownSubtext, setCountdownSubtext] = useState<string>('Get ready');
   const countdownTimersRef = useRef<NodeJS.Timeout[]>([]);
   const startRaceCountdownRef = useRef<() => void>(() => {});
 
@@ -869,7 +840,7 @@ export default function App() {
     setDodgeCount(0);
     setGameState('countdown');
     setCountdownVal('3');
-    setCountdownSubtext('GET READY');
+    setCountdownSubtext('Get ready');
 
     // Notify Three.js scene to align car on grid
     if (gameLoopRef.current && typeof gameLoopRef.current.prepareCountdown === 'function') {
@@ -883,7 +854,7 @@ export default function App() {
     // Step 2 (750ms)
     const t1 = setTimeout(() => {
       setCountdownVal('2');
-      setCountdownSubtext('SET');
+      setCountdownSubtext('Set');
       synth.playCountdownBeep(false);
       synth.updateEngine(60);
     }, 750);
@@ -891,7 +862,7 @@ export default function App() {
     // Step 1 (1500ms)
     const t2 = setTimeout(() => {
       setCountdownVal('1');
-      setCountdownSubtext('REV UP');
+      setCountdownSubtext('Rev up');
       synth.playCountdownBeep(false);
       synth.updateEngine(90);
     }, 1500);
@@ -899,7 +870,7 @@ export default function App() {
     // Step GO! (2250ms)
     const t3 = setTimeout(() => {
       setCountdownVal('GO!');
-      setCountdownSubtext('LAUNCH!');
+      setCountdownSubtext('Launch!');
       synth.playCountdownBeep(true);
       synth.playBoost();
       if (gameLoopRef.current && typeof gameLoopRef.current.launchRace === 'function') {
@@ -958,13 +929,12 @@ export default function App() {
     const IDLE_SPEED = 7;
 
     const COLORS = {
-      bg: 0x05050b, 
-      road: 0x12121f, 
-      ground: 0x07070f,
-      cyan: 0x00f0ff, 
-      magenta: 0xff2ec4, 
-      amber: 0xffb703, 
-      violet: 0x7b2ff7
+      bg: 0x8dc7e8,
+      road: 0x454a4d,
+      ground: 0x789255,
+      laneWhite: 0xf4f2e8,
+      laneYellow: 0xf3c64e,
+      roadDetail: 0x6d7377
     };
 
     /* ---------- INITIAL THREE ENVIRONMENT ---------- */
@@ -993,10 +963,10 @@ export default function App() {
     resizeObserver.observe(containerRef.current);
 
     /* ---------- LIGHTS ---------- */
-    const ambientLight = new THREE.AmbientLight(0x404066, 1.2);
+    const ambientLight = new THREE.AmbientLight(0xf1e5c9, 1.15);
     scene.add(ambientLight);
 
-    const hemisphereLight = new THREE.HemisphereLight(0x7b2ff7, 0x05050b, 0.8);
+    const hemisphereLight = new THREE.HemisphereLight(0x8dc7e8, 0x6d7650, 0.9);
     scene.add(hemisphereLight);
 
     /* ---------- RETRO STARFIELD ---------- */
@@ -1012,7 +982,7 @@ export default function App() {
     }
     starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
     const starMaterial = new THREE.PointsMaterial({ 
-      color: 0xbfe9ff, 
+      color: 0xf4f2e8,
       size: 0.85, 
       transparent: true, 
       opacity: 0.75 
@@ -1028,10 +998,10 @@ export default function App() {
       canvasEl.height = 256;
       const ctx = canvasEl.getContext('2d')!;
       const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-      grad.addColorStop(0, 'rgba(255,120,210,0.95)');
-      grad.addColorStop(0.3, 'rgba(255,70,170,0.55)');
-      grad.addColorStop(0.6, 'rgba(123,47,247,0.22)');
-      grad.addColorStop(1, 'rgba(123,47,247,0)');
+      grad.addColorStop(0, 'rgba(255,246,194,0.95)');
+      grad.addColorStop(0.3, 'rgba(255,210,116,0.55)');
+      grad.addColorStop(0.6, 'rgba(141,199,232,0.22)');
+      grad.addColorStop(1, 'rgba(141,199,232,0)');
       ctx.fillStyle = grad; 
       ctx.fillRect(0, 0, 256, 256);
       return new THREE.CanvasTexture(canvasEl);
@@ -1054,45 +1024,45 @@ export default function App() {
     const ZONE_LIGHTING = [
       {
         // Zone 0: Coastal daylight
-        fogColor: new THREE.Color(0xf6d5b8),
-        ambientColor: new THREE.Color(0xfff0dd),
+        fogColor: new THREE.Color(0xb9dced),
+        ambientColor: new THREE.Color(0xfff1cf),
         ambientIntensity: 1.1,
-        hemisphereSky: new THREE.Color(0x9cc6e7),
-        hemisphereGround: new THREE.Color(0x524136),
+        hemisphereSky: new THREE.Color(0x8dc7e8),
+        hemisphereGround: new THREE.Color(0x7c7857),
         hemisphereIntensity: 0.8,
-        sunColor: new THREE.Color(0xff8c00),
+        sunColor: new THREE.Color(0xffd36d),
         sunOpacity: 0.95,
         starOpacity: 0.0,
-        roadColor: new THREE.Color(0x202028),
-        groundColor: new THREE.Color(0xd2b48c)
+        roadColor: new THREE.Color(0x4b5053),
+        groundColor: new THREE.Color(0xd8be89)
       },
       {
         // Zone 1: Countryside overcast
-        fogColor: new THREE.Color(0x606c7a),
-        ambientColor: new THREE.Color(0x6d7987),
+        fogColor: new THREE.Color(0xc4d5c3),
+        ambientColor: new THREE.Color(0xe4ead7),
         ambientIntensity: 0.85,
-        hemisphereSky: new THREE.Color(0x7c8a99),
-        hemisphereGround: new THREE.Color(0x2b3036),
+        hemisphereSky: new THREE.Color(0xa9c6df),
+        hemisphereGround: new THREE.Color(0x657449),
         hemisphereIntensity: 0.5,
-        sunColor: new THREE.Color(0xaaaaaa),
-        sunOpacity: 0.15,
+        sunColor: new THREE.Color(0xf7df9d),
+        sunOpacity: 0.48,
         starOpacity: 0.0,
-        roadColor: new THREE.Color(0x181822),
-        groundColor: new THREE.Color(0x1c351c)
+        roadColor: new THREE.Color(0x505456),
+        groundColor: new THREE.Color(0x6f8b47)
       },
       {
-        // Zone 2: City street dusk
-        fogColor: new THREE.Color(0x0e0518),
-        ambientColor: new THREE.Color(0x2a0845),
-        ambientIntensity: 1.2,
-        hemisphereSky: new THREE.Color(0xff007f),
-        hemisphereGround: new THREE.Color(0x05020c),
+        // Zone 2: City daytime
+        fogColor: new THREE.Color(0xc8d8e1),
+        ambientColor: new THREE.Color(0xe6e1d4),
+        ambientIntensity: 1.1,
+        hemisphereSky: new THREE.Color(0x9ec7df),
+        hemisphereGround: new THREE.Color(0x707476),
         hemisphereIntensity: 0.7,
-        sunColor: new THREE.Color(0xff2ec4),
-        sunOpacity: 0.85,
-        starOpacity: 0.8,
-        roadColor: new THREE.Color(0x0c0c14),
-        groundColor: new THREE.Color(0x05050a)
+        sunColor: new THREE.Color(0xf4d58a),
+        sunOpacity: 0.35,
+        starOpacity: 0.0,
+        roadColor: new THREE.Color(0x4a4e51),
+        groundColor: new THREE.Color(0x7c827d)
       }
     ];
 
@@ -1496,34 +1466,34 @@ export default function App() {
         groundMesh: groundMesh
       };
 
-      // Bright edge neon bars (Outer walls)
+      // Yellow road-edge lines
       [-ROAD_WIDTH / 2, ROAD_WIDTH / 2].forEach(x => {
         const stripGeo = new THREE.BoxGeometry(0.12, 0.08, SEG_LEN);
-        const stripMat = new THREE.MeshBasicMaterial({ color: COLORS.magenta });
+        const stripMat = new THREE.MeshBasicMaterial({ color: COLORS.laneYellow });
         const strip = new THREE.Mesh(stripGeo, stripMat);
         strip.position.set(x, 0.04, 0);
         segmentGroup.add(strip);
       });
 
-      // Lanes division dashes (Cyan)
+      // Lane division dashes
       [-LANE_WIDTH / 2, LANE_WIDTH / 2].forEach(x => {
         const count = 5;
         const dashLen = 2.4;
         const gap = SEG_LEN / count;
         for (let i = 0; i < count; i++) {
           const dashGeo = new THREE.BoxGeometry(0.08, 0.04, dashLen);
-          const dashMat = new THREE.MeshBasicMaterial({ color: COLORS.cyan });
+          const dashMat = new THREE.MeshBasicMaterial({ color: COLORS.laneWhite });
           const dash = new THREE.Mesh(dashGeo, dashMat);
           dash.position.set(x, 0.02, -SEG_LEN / 2 + gap * i + gap / 2);
           segmentGroup.add(dash);
         }
       });
 
-      // Elegant grid speed lines crossbars
+      // Low-contrast road expansion joints
       for (let i = 0; i < 3; i++) {
         const barGeo = new THREE.BoxGeometry(ROAD_WIDTH, 0.012, 0.15);
         const barMat = new THREE.MeshBasicMaterial({ 
-          color: COLORS.cyan, 
+          color: COLORS.roadDetail, 
           transparent: true, 
           opacity: 0.20 
         });
@@ -3173,7 +3143,7 @@ export default function App() {
   const progressToObjective = Math.min(100, Math.floor((dodgeCount / 15) * 100));
 
   return (
-    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#05050b] text-[#eaf7ff] font-sans select-none" id="root-container">
+    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-asphalt text-text font-body select-none" id="root-container">
 
       {/* ---------- FULL-SCREEN 3D GAMEPLAY VIEW (canvas fills the whole screen) ---------- */}
       <section className="absolute inset-0" id="gameplay-viewport">
@@ -3186,7 +3156,7 @@ export default function App() {
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" id="gameCanvas" />
 
             {/* --- IN-GAME OVERLAY STATS / HUD --- */}
-            <div className={`absolute inset-x-0 top-0 p-3 sm:p-5 pointer-events-none flex flex-col gap-3 font-orbitron transition-all duration-300 ${gameState === 'playing' ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`absolute inset-x-0 top-0 p-3 sm:p-5 pointer-events-none flex flex-col gap-3 font-body transition-all duration-300 ${gameState === 'playing' ? 'opacity-100' : 'opacity-0'}`}>
               
               {/* Top Row: Distance & Pause, Center Nitro Status, Right: Speed & Score */}
               <div className="flex justify-between items-start w-full">
@@ -3198,18 +3168,18 @@ export default function App() {
                 >
                   <button 
                     onClick={() => setPaused(!paused)}
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/85 border border-[#00f0ff]/40 text-[#00f0ff] hover:text-white hover:border-white transition-all flex items-center justify-center cursor-pointer shadow-[0_0_12px_rgba(0,240,255,0.3)] active:scale-95"
+                    className="arcade-button w-10 h-10 sm:w-11 sm:h-11 bg-steel border-edge text-text transition-all flex items-center justify-center cursor-pointer active:scale-95"
                     title={paused ? "Resume Drive (P)" : "Pause Drive (P)"}
                     id="hud-pause-btn"
                   >
                     {paused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
                   </button>
-                  <div className={`px-3 py-1.5 rounded-xl bg-black/80 border border-[#00f0ff]/30 shadow-[0_0_10px_rgba(0,240,255,0.15)] flex flex-col justify-center ${score % 100 < 15 && score > 20 ? 'animate-hud-vibrate-subtle' : ''}`}>
-                    <div className="text-[9px] tracking-[0.2em] text-[#00f0ff]/90 uppercase font-mono flex items-center gap-1">
-                      <Compass className="w-3 h-3 text-[#00f0ff]" /> DISTANCE
+                  <div className={`arcade-panel px-3 py-1.5 flex flex-col justify-center ${score % 100 < 15 && score > 20 ? 'animate-hud-vibrate-subtle' : ''}`}>
+                    <div className="text-[10px] text-muted font-semibold flex items-center gap-1">
+                      <Compass className="w-3 h-3 text-secondary" /> Distance
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-white drop-shadow-[0_0_10px_rgba(0,240,255,0.6)] leading-none mt-0.5">
-                      {score} <span className="text-xs font-bold text-white/60">m</span>
+                    <div className="hud-number text-xl sm:text-2xl font-bold text-text leading-none mt-0.5">
+                      {score} <span className="text-xs font-bold text-muted">m</span>
                     </div>
                   </div>
                 </div>
@@ -3219,15 +3189,15 @@ export default function App() {
                   key={gameState === 'playing' ? 'hud-nitro-active' : 'hud-nitro-idle'}
                   className={`hidden sm:flex flex-col items-center ${gameState === 'playing' ? 'animate-hud-slide-top' : ''}`}
                 >
-                  <div className={`px-3.5 py-1.5 rounded-full border text-[11px] font-mono tracking-wider uppercase transition-all flex items-center gap-2 ${
+                  <div className={`arcade-panel px-3 py-1.5 text-xs font-semibold transition-all flex items-center gap-2 ${
                     isBoosting 
-                      ? 'bg-[#ff2ec4]/30 border-[#ff2ec4] text-white shadow-[0_0_20px_rgba(255,46,196,0.8)] animate-hud-vibrate-intense animate-speed-pulse'
+                      ? 'bg-primary border-primary text-asphalt'
                       : boostFuel > 20
-                        ? 'bg-black/75 border-[#00f0ff]/40 text-[#00f0ff]'
-                        : 'bg-black/75 border-amber-500/40 text-amber-400'
+                        ? 'text-secondary'
+                        : 'text-muted'
                   }`}>
-                    <Flame className={`w-4 h-4 ${isBoosting ? 'text-white animate-bounce' : 'text-[#00f0ff]'}`} />
-                    <span className="font-bold">{isBoosting ? '⚡ NITRO ACTIVE (+80% SCORE)' : `NITRO FUEL: ${boostFuel}% (HOLD W / ↑)`}</span>
+                    <Flame className={`w-4 h-4 ${isBoosting ? 'text-asphalt' : 'text-primary'}`} />
+                    <span>{isBoosting ? 'Nitro active (+80% score)' : `Nitro fuel: ${boostFuel}% (hold W / ↑)`}</span>
                   </div>
                 </div>
 
@@ -3237,29 +3207,22 @@ export default function App() {
                   className={`${gameState === 'playing' ? 'animate-hud-slide-right' : ''}`}
                 >
                   <div 
-                    className={`flex flex-col items-center px-3 sm:px-4 py-2.5 rounded-2xl bg-black/90 border transition-all duration-150 pointer-events-auto shadow-[0_0_20px_rgba(0,0,0,0.6)] ${
-                      isBoosting 
-                        ? 'animate-hud-vibrate-intense animate-speed-pulse border-[#ff2ec4] bg-[#ff2ec4]/15 shadow-[0_0_30px_rgba(255,46,196,0.5)]'
-                        : Math.round(speed * 6.5) > 180 
-                          ? 'animate-hud-vibrate-intense border-[#ff4500] bg-[#ff4500]/10 shadow-[0_0_20px_rgba(255,69,0,0.4)]'
-                          : Math.round(speed * 6.5) > 120 
-                            ? 'animate-hud-vibrate-subtle border-[#ffb703]/70 bg-[#ffb703]/10 shadow-[0_0_15px_rgba(255,183,3,0.25)]'
-                            : 'border-[#00f0ff]/30 shadow-[0_0_12px_rgba(0,240,255,0.15)]'
-                    }`} 
+                    className={`arcade-panel flex flex-col items-end px-3 sm:px-4 py-2 pointer-events-auto ${Math.round(speed * 6.5) > 180 ? 'animate-hud-vibrate-subtle' : ''}`} 
                     id="hud-speed-display"
                   >
                     {/* Header Score Display */}
-                    <div className="flex items-center justify-between w-full gap-3 pb-1 border-b border-white/10 mb-1">
-                      <div className="text-[9px] tracking-[0.2em] text-[#ff2ec4] uppercase font-mono flex items-center gap-1">
-                        <Trophy className="w-3 h-3 text-[#ff2ec4]" /> SCORE
+                    <div className="flex items-center justify-between w-full gap-3 pb-1 border-b border-edge mb-1">
+                      <div className="text-[10px] text-muted font-semibold flex items-center gap-1">
+                        <Trophy className="w-3 h-3 text-primary" /> Score
                       </div>
-                      <div className="text-sm sm:text-base font-black text-white drop-shadow-[0_0_10px_rgba(255,46,196,0.6)] leading-none font-orbitron">
+                      <div className="hud-number text-sm sm:text-base font-bold text-text leading-none font-display">
                         {Math.round(score * 12.5).toLocaleString()}
                       </div>
                     </div>
 
-                    {/* SVG Circular Radial Speedometer Gauge */}
-                    <SpeedRadialGauge speed={speed} isBoosting={isBoosting} />
+                    <div className="hud-number text-2xl sm:text-3xl font-bold text-speed font-display leading-none">
+                      {Math.round(speed * 6.5)} <span className="text-xs font-body text-muted">km/h</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3267,98 +3230,98 @@ export default function App() {
 
             {/* --- OVERLAY: STARTING RACE COUNTDOWN ANIMATION --- */}
             {gameState === 'countdown' && (
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center pointer-events-none z-30 select-none animate-fade-in" id="starting-countdown-overlay">
+              <div className="absolute inset-0 bg-asphalt/85 flex flex-col items-center justify-center pointer-events-none z-30 select-none animate-fade-in" id="starting-countdown-overlay">
                 {/* 3-Gantry Starting Lights */}
-                <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-[#07070f]/90 border border-white/20 shadow-[0_0_30px_rgba(0,0,0,0.8)] mb-6">
+                <div className="arcade-panel flex items-center gap-4 px-6 py-3 mb-6">
                   {/* Light 1: Red / Ready */}
                   <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 transition-all duration-200 ${
                     countdownVal === '3' || countdownVal === '2' || countdownVal === '1' || countdownVal === 'GO!'
-                      ? 'bg-red-500 border-red-300 shadow-[0_0_22px_#ef4444] animate-beacon-glow'
-                      : 'bg-red-950/40 border-red-900/50 opacity-30'
+                      ? 'bg-danger border-danger animate-beacon-glow'
+                      : 'bg-steel border-edge opacity-40'
                   }`}></div>
 
                   {/* Light 2: Amber / Set */}
                   <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 transition-all duration-200 ${
                     countdownVal === '2' || countdownVal === '1' || countdownVal === 'GO!'
-                      ? 'bg-amber-400 border-amber-200 shadow-[0_0_22px_#f59e0b] animate-beacon-glow'
-                      : 'bg-amber-950/40 border-amber-900/50 opacity-30'
+                      ? 'bg-primary border-primary animate-beacon-glow'
+                      : 'bg-steel border-edge opacity-40'
                   }`}></div>
 
-                  {/* Light 3: Green/Cyan / Go */}
+                  {/* Light 3: Green / Go */}
                   <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 transition-all duration-200 ${
                     countdownVal === '1' || countdownVal === 'GO!'
-                      ? 'bg-[#00f0ff] border-cyan-200 shadow-[0_0_28px_#00f0ff] animate-beacon-glow'
-                      : 'bg-cyan-950/40 border-cyan-900/50 opacity-30'
+                      ? 'bg-go border-go animate-beacon-glow'
+                      : 'bg-steel border-edge opacity-40'
                   }`}></div>
                 </div>
 
                 {/* Big Animated Countdown Digits */}
                 <div key={countdownVal} className="flex flex-col items-center animate-countdown-pop">
-                  <div className={`text-8xl sm:text-9xl font-black italic font-orbitron tracking-tight drop-shadow-[0_0_40px_rgba(0,240,255,0.9)] ${
+                  <div className={`hud-number text-8xl sm:text-9xl font-bold font-display ${
                     countdownVal === 'GO!'
-                      ? 'text-[#00f0ff] drop-shadow-[0_0_60px_#00f0ff]'
+                      ? 'text-go'
                       : countdownVal === '1'
-                        ? 'text-[#ffb703]'
+                        ? 'text-primary'
                         : countdownVal === '2'
-                          ? 'text-[#ff2ec4]'
-                          : 'text-white'
+                          ? 'text-secondary'
+                          : 'text-text'
                   }`}>
                     {countdownVal}
                   </div>
-                  <div className="mt-2 text-lg sm:text-2xl font-black font-orbitron tracking-[0.3em] uppercase text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]">
+                  <div className="mt-2 text-lg sm:text-2xl font-bold font-display text-text">
                     {countdownSubtext}
                   </div>
                 </div>
 
                 {/* Quick Reminder */}
-                <div className="mt-8 px-5 py-2.5 rounded-xl bg-black/75 border border-[#00f0ff]/30 text-white/80 text-xs font-mono tracking-wider flex items-center gap-3">
-                  <span>Steer: <strong>A / D or ← / →</strong></span>
-                  <span className="text-white/30">•</span>
-                  <span>Nitro Boost: <strong>Hold W / ↑ / Space</strong></span>
+                <div className="mt-8 px-5 py-2.5 rounded-ui bg-asphalt border border-edge text-muted text-xs flex items-center gap-3">
+                  <span>Steer: <strong className="text-text">A / D or ← / →</strong></span>
+                  <span className="text-edge">•</span>
+                  <span>Nitro: <strong className="text-text">hold W / ↑ / Space</strong></span>
                 </div>
               </div>
             )}
 
             {/* --- OVERLAY: PAUSED SCREEN --- */}
             {paused && gameState === 'playing' && !needsRotate && (
-              <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20 pointer-events-auto" id="paused-screen-overlay">
-                <div className="max-w-md w-full animate-fade-in bg-[#07070f]/95 border border-[#00f0ff]/30 p-6 rounded-2xl shadow-[0_0_30px_rgba(0,240,255,0.2)]">
-                  <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-[#00f0ff] font-orbitron drop-shadow-[0_0_20px_rgba(0,240,255,0.8)] animate-pulse">
-                    RACE PAUSED
+              <div className="absolute inset-0 bg-asphalt/90 flex flex-col items-center justify-center p-6 text-center z-20 pointer-events-auto" id="paused-screen-overlay">
+                <div className="arcade-panel max-w-md w-full animate-fade-in p-6">
+                  <h2 className="text-4xl sm:text-5xl font-bold text-text font-display">
+                    Paused
                   </h2>
-                  <p className="mt-1 text-white/70 uppercase tracking-[0.2em] text-xs font-semibold font-rajdhani">
-                    ENGINE IDLING
+                  <p className="mt-1 text-muted text-sm font-semibold font-body">
+                    Engine idling
                   </p>
 
                   <div className="mt-5 grid grid-cols-2 gap-3 text-center">
-                    <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                      <div className="text-[10px] text-white/50 uppercase font-mono">Distance</div>
-                      <div className="text-xl font-bold text-white font-orbitron">{score} M</div>
+                    <div className="p-3 rounded-ui bg-asphalt border border-edge">
+                      <div className="text-xs text-muted font-semibold">Distance</div>
+                      <div className="hud-number text-xl font-bold text-text font-display">{score} m</div>
                     </div>
-                    <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                      <div className="text-[10px] text-white/50 uppercase font-mono">Current Speed</div>
-                      <div className="text-xl font-bold text-[#ff4500] font-orbitron">{Math.round(speed * 6.5)} KM/H</div>
+                    <div className="p-3 rounded-ui bg-asphalt border border-edge">
+                      <div className="text-xs text-muted font-semibold">Speed</div>
+                      <div className="hud-number text-xl font-bold text-speed font-display">{Math.round(speed * 6.5)} km/h</div>
                     </div>
                   </div>
                   
                   <div className="mt-5 flex flex-col gap-2.5">
                     <button 
                       onClick={() => setPaused(false)}
-                      className="w-full py-3.5 bg-gradient-to-r from-[#00f0ff] to-[#ff2ec4] text-black font-black rounded-xl hover:scale-102 transition-all shadow-[0_0_20px_rgba(0,240,255,0.4)] cursor-pointer text-sm font-orbitron tracking-widest flex items-center justify-center gap-2"
+                      className="arcade-button w-full py-3.5 bg-primary text-asphalt font-bold cursor-pointer text-sm font-display flex items-center justify-center gap-2"
                     >
-                      <Play className="w-4 h-4 fill-current" /> RESUME DRIVE
+                      <Play className="w-4 h-4 fill-current" /> Resume
                     </button>
                     <button 
                       onClick={restartGame}
-                      className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-all cursor-pointer text-xs font-orbitron tracking-wider flex items-center justify-center gap-2"
+                      className="arcade-button w-full py-3 bg-steel text-text font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-2"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" /> RESTART RACE
+                      <RotateCcw className="w-3.5 h-3.5" /> Restart
                     </button>
                     <button 
                       onClick={() => setShowHelpModal(true)}
-                      className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-[#00f0ff] rounded-xl transition-all cursor-pointer text-xs font-mono flex items-center justify-center gap-1.5"
+                      className="arcade-button w-full py-2.5 bg-steel text-muted font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-1.5"
                     >
-                      <HelpCircle className="w-3.5 h-3.5" /> Game Guide
+                      <HelpCircle className="w-3.5 h-3.5" /> Game guide
                     </button>
                   </div>
                 </div>
@@ -3368,7 +3331,7 @@ export default function App() {
             {/* --- OVERLAY: MAIN MENU (PLAY always visible, no scrolling) --- */}
             {gameState === 'title' && (
               <div
-                className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center text-center z-10 overflow-y-auto safe-pad-t safe-pad-b"
+                className="absolute inset-0 bg-asphalt/85 flex flex-col items-center justify-center text-center z-10 overflow-y-auto safe-pad-t safe-pad-b"
                 id="title-screen-overlay"
               >
                 <div className="w-full max-w-sm flex flex-col items-center gap-3 px-4">
@@ -3376,9 +3339,9 @@ export default function App() {
                   {/* Audio toggle and driver name (moved out of the removed nav bar) */}
                   <div className="w-full flex items-center justify-between gap-2">
                     <button
-                      className="p-2 rounded-full bg-white/5 border border-white/10 text-white/70 cursor-pointer flex items-center justify-center"
+                      className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
                       onClick={() => setMuted(!muted)}
-                      title={muted ? "Unmute Audio" : "Mute Audio"}
+                      title={muted ? "Unmute audio" : "Mute audio"}
                       id="audio-toggle"
                     >
                       {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -3389,7 +3352,7 @@ export default function App() {
                           type="text"
                           value={nameInput}
                           onChange={(e) => setNameInput(e.target.value.toUpperCase())}
-                          className="bg-black/80 border border-[#00f0ff] text-xs px-2 py-1 rounded text-white font-mono w-24 focus:outline-none"
+                          className="bg-asphalt border border-edge text-xs px-2 py-1 rounded-ui text-text w-24 focus:outline-none"
                           maxLength={12}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleSaveUsername();
@@ -3399,36 +3362,36 @@ export default function App() {
                         />
                         <button
                           onClick={handleSaveUsername}
-                          className="text-[10px] text-green-400 bg-green-900/40 px-2 py-1 rounded border border-green-500/30 cursor-pointer"
+                          className="text-xs font-semibold text-asphalt bg-primary px-2 py-1 rounded-ui cursor-pointer"
                         >
-                          SAVE
+                          Save
                         </button>
                       </div>
                     ) : (
                       <div
-                        className="text-xs font-bold text-white font-mono cursor-pointer flex items-center gap-1"
+                        className="text-xs font-semibold text-muted cursor-pointer flex items-center gap-1"
                         onClick={() => {
                           setNameInput(username);
                           setIsEditingName(true);
                         }}
-                        title="Click to edit driver name"
+                        title="Edit driver name"
                       >
                         <span>{username}</span>
-                        <span className="text-[9px] opacity-40 font-normal">(EDIT)</span>
+                        <span className="text-[10px] opacity-60 font-normal">(edit)</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="inline-block px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white/80 text-[11px] font-semibold">
+                  <div className="inline-block px-3 py-1 rounded-ui bg-steel border border-edge text-muted text-xs font-semibold">
                     3D highway traffic racer
                   </div>
 
-                  <h1 className="text-4xl sm:text-6xl font-black italic tracking-tighter text-white font-orbitron">
-                    NEON RUSH 3D
+                  <h1 className="text-4xl sm:text-6xl font-bold text-text font-display">
+                    Neon Rush 3D
                   </h1>
 
                   {highScore > 0 && (
-                    <div className="text-[#ffb703] font-orbitron text-sm tracking-wider flex items-center gap-1.5 font-bold">
+                    <div className="text-primary text-sm font-semibold flex items-center gap-1.5">
                       <Trophy className="w-4 h-4" /> Best distance: {highScore}m
                     </div>
                   )}
@@ -3436,22 +3399,22 @@ export default function App() {
                   <div className="w-full flex flex-col gap-3 mt-2">
                     <button
                       onClick={startGame}
-                      className="w-full min-h-14 px-6 py-4 bg-[#00f0ff] text-black font-black text-lg font-orbitron tracking-widest cursor-pointer flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                      className="arcade-button w-full min-h-14 px-6 py-4 bg-primary text-asphalt font-bold text-lg font-display cursor-pointer flex items-center justify-center gap-2 active:scale-95 transition-transform"
                       id="btn-engage-engine"
                     >
-                      <Play className="w-6 h-6 fill-current" /> PLAY
+                      <Play className="w-6 h-6 fill-current" /> Play
                     </button>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setGarageOpen(true)}
-                        className="min-h-12 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
+                        className="arcade-button min-h-12 px-4 py-3 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
                         id="btn-garage"
                       >
                         <Car className="w-4 h-4" /> Garage
                       </button>
                       <button
                         onClick={() => setShowHelpModal(true)}
-                        className="min-h-12 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
+                        className="arcade-button min-h-12 px-4 py-3 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
                         id="btn-how-to-play"
                       >
                         <HelpCircle className="w-4 h-4" /> How to play
@@ -3464,33 +3427,33 @@ export default function App() {
             )}
 
             {gameState === 'gameover' && (
-              <div className="absolute inset-0 bg-[#05050b]/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-10" id="gameover-screen-overlay">
-                <div className="max-w-md w-full animate-fade-in bg-[#07070f]/95 border border-[#ff2ec4]/40 p-6 rounded-2xl shadow-[0_0_30px_rgba(255,46,196,0.3)]">
-                  <h2 className="text-3xl sm:text-5xl font-black italic tracking-tighter text-[#ff2ec4] font-orbitron drop-shadow-[0_0_20px_rgba(255,46,196,0.95)]">
-                    CRASH DETECTED!
+              <div className="absolute inset-0 bg-asphalt/90 flex flex-col items-center justify-center p-6 text-center z-10" id="gameover-screen-overlay">
+                <div className="arcade-panel max-w-md w-full animate-fade-in p-6">
+                  <h2 className="text-3xl sm:text-5xl font-bold text-danger font-display">
+                    Race over
                   </h2>
-                  <p className="mt-1 text-[#ffb703] tracking-[0.2em] uppercase text-xs font-bold font-rajdhani">
-                    VEHICLE COLLISION
+                  <p className="mt-1 text-muted text-sm font-semibold font-body">
+                    Vehicle collision
                   </p>
 
-                  <div className="mt-5 p-5 rounded-xl bg-black/60 border border-white/10 relative">
-                    <div className="text-[11px] text-[#00f0ff] uppercase tracking-widest font-mono">Distance Traveled</div>
-                    <div className="text-4xl font-black text-white font-orbitron mt-1 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                  <div className="mt-5 p-5 rounded-ui bg-asphalt border border-edge relative">
+                    <div className="text-sm text-muted font-semibold">Distance</div>
+                    <div className="hud-number text-4xl font-bold text-text font-display mt-1">
                       {score} M
                     </div>
                     
                     {score >= highScore && score > 0 && (
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#ffb703] to-[#ff2ec4] text-black text-[10px] font-black px-3.5 py-1 rounded-full font-orbitron tracking-widest border border-black animate-bounce shadow-[0_0_15px_rgba(255,183,3,0.5)]">
-                        🏆 NEW BEST RECORD!
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-asphalt text-xs font-bold px-3 py-1 rounded-ui border border-asphalt">
+                        New best
                       </span>
                     )}
 
-                    <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/10 text-xs font-mono">
-                      <div className="text-left text-white/60">
-                        Cars Dodged: <strong className="text-[#00f0ff]">{dodgeCount}</strong>
+                    <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-edge text-sm font-body">
+                      <div className="text-left text-muted">
+                        Cars dodged: <strong className="hud-number text-secondary">{dodgeCount}</strong>
                       </div>
-                      <div className="text-right text-white/60">
-                        Best Score: <strong className="text-[#ffb703]">{highScore}M</strong>
+                      <div className="text-right text-muted">
+                        Best distance: <strong className="hud-number text-primary">{highScore}m</strong>
                       </div>
                     </div>
                   </div>
@@ -3498,16 +3461,16 @@ export default function App() {
                   <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mt-6">
                     <button 
                       onClick={restartGame}
-                      className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-[#00f0ff] to-[#ff2ec4] text-black font-black rounded-full hover:scale-105 transition-all shadow-[0_0_25px_rgba(0,240,255,0.5)] cursor-pointer text-sm font-orbitron tracking-widest flex items-center justify-center gap-2"
+                      className="arcade-button w-full sm:w-auto px-8 py-3.5 bg-primary text-asphalt font-bold cursor-pointer text-sm font-display flex items-center justify-center gap-2"
                       id="btn-re-engage"
                     >
-                      <RotateCcw className="w-4 h-4" /> PLAY AGAIN
+                      <RotateCcw className="w-4 h-4" /> Play again
                     </button>
                     <button 
                       onClick={() => setGameState('title')}
-                      className="w-full sm:w-auto px-6 py-3.5 bg-white/10 border border-white/20 text-white font-semibold rounded-full hover:bg-white/20 transition-all cursor-pointer text-xs font-orbitron tracking-wider"
+                      className="arcade-button w-full sm:w-auto px-6 py-3.5 bg-steel text-text font-semibold cursor-pointer text-sm font-body"
                     >
-                      MAIN MENU
+                      Main menu
                     </button>
                   </div>
                 </div>
@@ -3524,64 +3487,64 @@ export default function App() {
                 
                 {/* Left Steer Button */}
                 <button 
-                  className="pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-2xl border border-[#00f0ff]/60 bg-[#07070f]/90 flex items-center gap-2 text-[#00f0ff] hover:bg-[#00f0ff]/20 active:scale-95 transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] cursor-pointer"
+                  className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
                   onClick={() => gameLoopRef.current?.changeLaneLeft()}
-                  title="Steer Left (A or ←)"
+                  title="Steer left (A or ←)"
                   id="ctrl-steer-left"
                 >
-                  <ArrowLeft className="w-6 h-6 animate-pulse" />
+                  <ArrowLeft className="w-6 h-6 text-secondary" />
                   <div className="text-left hidden sm:flex flex-col">
-                    <span className="text-xs font-black font-orbitron tracking-wider">LEFT</span>
-                    <span className="text-[9px] text-white/50 font-mono">A / ← Key</span>
+                    <span className="text-xs font-bold font-display">Left</span>
+                    <span className="text-[10px] text-muted">A / ←</span>
                   </div>
                 </button>
 
-                {/* Big Glowing Nitro Boost Button */}
+                {/* Nitro Boost Button */}
                 <button
-                  className={`pointer-events-auto relative overflow-hidden h-14 sm:h-16 px-5 sm:px-10 rounded-2xl border transition-all duration-150 flex items-center gap-2 sm:gap-3 cursor-pointer select-none active:scale-95 ${
+                  className={`arcade-button pointer-events-auto relative overflow-hidden h-14 sm:h-16 px-5 sm:px-10 rounded-ui flex items-center gap-2 sm:gap-3 cursor-pointer select-none active:scale-95 ${
                     isBoosting
-                      ? 'bg-[#ff2ec4]/35 border-[#ff2ec4] text-white shadow-[0_0_30px_rgba(255,46,196,0.9)] animate-hud-vibrate-subtle'
+                      ? 'bg-primary border-primary text-asphalt'
                       : boostFuel > 15
-                        ? 'bg-[#07070f]/90 border-amber-400/70 text-amber-300 hover:border-amber-300 shadow-[0_0_20px_rgba(255,183,3,0.35)]'
-                        : 'bg-black/80 border-white/20 text-white/40'
+                        ? 'bg-steel border-edge text-text'
+                        : 'bg-steel border-edge text-muted'
                   }`}
                   onPointerDown={() => gameLoopRef.current?.setBoost(true)}
                   onPointerUp={() => gameLoopRef.current?.setBoost(false)}
                   onPointerLeave={() => gameLoopRef.current?.setBoost(false)}
                   onTouchStart={(e) => { e.preventDefault(); gameLoopRef.current?.setBoost(true); }}
                   onTouchEnd={(e) => { e.preventDefault(); gameLoopRef.current?.setBoost(false); }}
-                  title="Hold for Nitro Speed Boost (W / ↑ / Shift / Space)"
+                  title="Hold for nitro speed boost (W / ↑ / Shift / Space)"
                   id="ctrl-nitro-boost"
                 >
                   {/* Fuel gauge fill inside button */}
                   <div 
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-500/25 to-[#ff2ec4]/35 pointer-events-none transition-all duration-150"
+                    className="absolute inset-y-0 left-0 bg-secondary/40 pointer-events-none transition-all duration-150"
                     style={{ width: `${boostFuel}%` }}
                   ></div>
 
-                  <Flame className={`w-6 h-6 sm:w-7 sm:h-7 relative z-10 ${isBoosting ? 'text-white animate-bounce' : 'text-amber-400'}`} />
+                  <Flame className={`w-6 h-6 sm:w-7 sm:h-7 relative z-10 ${isBoosting ? 'text-asphalt' : 'text-primary'}`} />
                   <div className="text-left relative z-10 flex flex-col">
-                    <span className="text-xs sm:text-sm font-black font-orbitron tracking-widest uppercase">
-                      {isBoosting ? '⚡ BOOSTING!' : 'NITRO BOOST'}
+                    <span className="text-xs sm:text-sm font-bold font-display">
+                      {isBoosting ? 'Boosting' : 'Nitro'}
                     </span>
-                    <span className="text-[9px] text-white/70 font-mono">
-                      HOLD W / ↑ ({boostFuel}%)
+                    <span className="text-[10px] text-muted">
+                      Hold W / ↑ ({boostFuel}%)
                     </span>
                   </div>
                 </button>
 
                 {/* Right Steer Button */}
                 <button 
-                  className="pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-2xl border border-[#00f0ff]/60 bg-[#07070f]/90 flex items-center gap-2 text-[#00f0ff] hover:bg-[#00f0ff]/20 active:scale-95 transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] cursor-pointer"
+                  className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
                   onClick={() => gameLoopRef.current?.changeLaneRight()}
-                  title="Steer Right (D or →)"
+                  title="Steer right (D or →)"
                   id="ctrl-steer-right"
                 >
                   <div className="text-right hidden sm:flex flex-col">
-                    <span className="text-xs font-black font-orbitron tracking-wider">RIGHT</span>
-                    <span className="text-[9px] text-white/50 font-mono">D / → Key</span>
+                    <span className="text-xs font-bold font-display">Right</span>
+                    <span className="text-[10px] text-muted">D / →</span>
                   </div>
-                  <ArrowRight className="w-6 h-6 animate-pulse" />
+                  <ArrowRight className="w-6 h-6 text-secondary" />
                 </button>
               </div>
             )}
@@ -3591,42 +3554,36 @@ export default function App() {
 
       {/* --- GARAGE OVERLAY (temporary car picker; real Garage arrives in Step 7) --- */}
       {garageOpen && (
-        <div className="absolute inset-0 z-40 bg-[#05050b]/95 flex flex-col safe-pad-t safe-pad-b" id="garage-overlay">
-          <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
-            <h2 className="text-lg font-black font-orbitron text-white tracking-wide">Garage</h2>
+        <div className="absolute inset-0 z-40 bg-asphalt flex flex-col safe-pad-t safe-pad-b" id="garage-overlay">
+          <div className="flex items-center justify-between p-4 border-b border-edge shrink-0">
+            <h2 className="text-lg font-bold font-display text-text">Garage</h2>
             <button
               onClick={() => setGarageOpen(false)}
-              className="min-h-12 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm cursor-pointer flex items-center gap-2"
+              className="arcade-button min-h-12 px-4 py-2 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center gap-2"
               id="garage-back-btn"
             >
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+          <div className="flex items-center justify-between mb-4 border-b border-edge pb-2">
             <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-[#ff2ec4]" />
-              <h3 className="text-xs font-bold text-[#ff2ec4] tracking-[0.2em] uppercase font-orbitron">Active Vehicle</h3>
+              <Cpu className="w-4 h-4 text-primary" />
+              <h3 className="text-xs font-bold text-primary">Active vehicle</h3>
             </div>
           </div>
 
-          {/* Vehicle Wireframe Representation Preview */}
+          {/* Vehicle Silhouette Preview */}
           <div className="mb-6">
-            <div className="aspect-video bg-[#0b0c16] border border-[#00f0ff]/30 rounded-lg flex flex-col items-center justify-center p-3 relative overflow-hidden group shadow-[inset_0_0_25px_rgba(0,240,255,0.08)]">
-              {/* Outer decorative tech grid */}
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.06)_1px,transparent_1px)] bg-[size:12px_12px] opacity-70 pointer-events-none"></div>
-
-              {/* Holographic scanner laser line */}
-              <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#00f0ff] to-transparent animate-pulse pointer-events-none top-1/2 -translate-y-1/2 opacity-60"></div>
-              
-              {/* Procedural SVG Silhouette Wireframe tailored to the active vehicle */}
-              <div className="relative z-10 w-full flex items-center justify-center py-2 transition-transform duration-300 group-hover:scale-105">
-                <svg viewBox="0 0 260 90" className="w-48 h-auto overflow-visible" style={{ filter: `drop-shadow(0 0 12px #${activeVehicle.underglow.toString(16).padStart(6, '0')}aa)` }}>
+            <div className="aspect-video bg-steel-light border border-edge rounded-ui flex flex-col items-center justify-center p-3 relative overflow-hidden">
+              {/* Procedural SVG Silhouette tailored to the active vehicle */}
+              <div className="relative z-10 w-full flex items-center justify-center py-2">
+                <svg viewBox="0 0 260 90" className="w-48 h-auto overflow-visible">
                   {/* Underglow Ground Reflection */}
                   <ellipse cx="130" cy="74" rx="90" ry="8" fill={`#${activeVehicle.underglow.toString(16).padStart(6, '0')}`} opacity="0.35" />
                   
                   {/* Wheel Wells / Wheels */}
-                  <g fill="#0e101a" stroke={`#${activeVehicle.underglow.toString(16).padStart(6, '0')}`} strokeWidth="2">
+                  <g className="fill-asphalt" stroke={`#${activeVehicle.underglow.toString(16).padStart(6, '0')}`} strokeWidth="2">
                     {/* Front Wheel */}
                     <circle cx="200" cy="65" r="14" />
                     <circle cx="200" cy="65" r="6" fill={`#${activeVehicle.underglow.toString(16).padStart(6, '0')}`} />
@@ -3663,9 +3620,8 @@ export default function App() {
                         ? "M 90 42 L 120 34 L 160 34 L 178 44 Z"
                         : "M 88 44 L 118 36 L 168 36 L 182 46 Z"
                     }
-                    fill="#00f0ff"
+                    className="fill-secondary stroke-secondary"
                     fillOpacity="0.25"
-                    stroke="#00f0ff"
                     strokeWidth="1.5"
                   />
 
@@ -3678,76 +3634,76 @@ export default function App() {
                   )}
 
                   {/* Twin Exhaust Afterburners */}
-                  <circle cx="16" cy="58" r="3" fill="#ff2ec4" className="animate-ping" />
-                  <line x1="2" y1="58" x2="16" y2="58" stroke="#ff2ec4" strokeWidth="2" strokeDasharray="2,2" />
+                  <circle cx="16" cy="58" r="3" className="fill-primary" />
+                  <line x1="2" y1="58" x2="16" y2="58" className="stroke-primary" strokeWidth="2" strokeDasharray="2,2" />
 
                   {/* Headlight Ray */}
-                  <polygon points="246,58 265,54 265,66" fill="#fff" opacity="0.6" />
+                  <polygon points="246,58 265,54 265,66" className="fill-text" opacity="0.6" />
                 </svg>
               </div>
 
               {/* Corner metadata badges */}
 
-              <div className="absolute bottom-2 left-2 text-[8px] font-mono text-white/50 uppercase flex items-center gap-2">
-                <span>CORE_ID: {activeVehicle.id.toUpperCase()}</span>
-                <span className="text-[#00f0ff]">•</span>
-                <span className="text-white/70">CLASS: {activeVehicle.role}</span>
+              <div className="absolute bottom-2 left-2 text-[10px] text-muted flex items-center gap-2">
+                <span>ID: {activeVehicle.id}</span>
+                <span className="text-edge">•</span>
+                <span>Class: {activeVehicle.role}</span>
               </div>
             </div>
 
             {/* Vehicle Meta Headers */}
             <div className="flex justify-between items-end mt-4">
               <div>
-                <h4 className="text-lg font-black font-orbitron text-white tracking-wide">{activeVehicle.name}</h4>
-                <div className="text-[10px] text-[#ff2ec4] font-mono mt-0.5 font-semibold tracking-wider">
-                  ROLE: {activeVehicle.role.toUpperCase()}
+                <h4 className="text-lg font-bold font-display text-text">{activeVehicle.name}</h4>
+                <div className="text-xs text-muted mt-0.5 font-semibold">
+                  Role: {activeVehicle.role}
                 </div>
               </div>
-              <span className="text-[10px] px-2.5 py-1 font-bold bg-[#00f0ff]/10 text-[#00f0ff] border border-[#00f0ff]/30 font-mono rounded tracking-wider shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+              <span className="text-xs px-2.5 py-1 font-bold bg-steel-light text-text border border-edge rounded-ui">
                 {activeVehicle.mark}
               </span>
             </div>
             
-            <p className="text-xs text-white/70 mt-2.5 leading-relaxed font-rajdhani border-b border-white/5 pb-4 min-h-[48px]">
+            <p className="text-xs text-muted mt-2.5 leading-relaxed font-body border-b border-edge pb-4 min-h-[48px]">
               {activeVehicle.description}
             </p>
 
             {/* Spec Sliders */}
             <div className="space-y-3 mt-4">
               <div>
-                <div className="flex justify-between text-[10px] uppercase font-mono tracking-widest mb-1 text-white/70">
-                  <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-[#00f0ff]" /> Speed Factor</span>
-                  <span className="text-[#00f0ff] font-bold">{activeVehicle.velocity}%</span>
+                <div className="flex justify-between text-xs font-semibold mb-1 text-muted">
+                  <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-secondary" /> Speed</span>
+                  <span className="text-secondary font-bold">{activeVehicle.velocity}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-asphalt rounded-ui overflow-hidden">
                   <div 
-                    className="h-full bg-[#00f0ff] rounded-full transition-all duration-500" 
+                    className="h-full bg-secondary rounded-ui transition-all duration-500" 
                     style={{ width: `${activeVehicle.velocity}%` }}
                   ></div>
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between text-[10px] uppercase font-mono tracking-widest mb-1 text-white/70">
-                  <span className="flex items-center gap-1"><Compass className="w-3 h-3 text-[#ff2ec4]" /> Maneuver</span>
-                  <span className="text-[#ff2ec4] font-bold">{activeVehicle.agility}%</span>
+                <div className="flex justify-between text-xs font-semibold mb-1 text-muted">
+                  <span className="flex items-center gap-1"><Compass className="w-3 h-3 text-primary" /> Handling</span>
+                  <span className="text-primary font-bold">{activeVehicle.agility}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-asphalt rounded-ui overflow-hidden">
                   <div 
-                    className="h-full bg-[#ff2ec4] rounded-full transition-all duration-500" 
+                    className="h-full bg-primary rounded-ui transition-all duration-500" 
                     style={{ width: `${activeVehicle.agility}%` }}
                   ></div>
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between text-[10px] uppercase font-mono tracking-widest mb-1 text-white/70">
-                  <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-[#ffb703]" /> Shield Armour</span>
-                  <span className="text-[#ffb703] font-bold">{activeVehicle.resilience}%</span>
+                <div className="flex justify-between text-xs font-semibold mb-1 text-muted">
+                  <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-text" /> Armour</span>
+                  <span className="text-text font-bold">{activeVehicle.resilience}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-asphalt rounded-ui overflow-hidden">
                   <div 
-                    className="h-full bg-[#ffb703] rounded-full transition-all duration-500" 
+                    className="h-full bg-text rounded-ui transition-all duration-500" 
                     style={{ width: `${activeVehicle.resilience}%` }}
                   ></div>
                 </div>
@@ -3755,13 +3711,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* Quick Vehicle Garage Selection List */}
-          <div className="mt-auto border-t border-white/10 pt-4">
+          {/* Vehicle Selection List */}
+          <div className="mt-auto border-t border-edge pt-4">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] text-[#00f0ff] tracking-widest uppercase font-mono font-semibold flex items-center gap-1">
-                <Car className="w-3 h-3" /> Select Your Car:
+              <span className="text-xs text-muted font-semibold flex items-center gap-1">
+                <Car className="w-3 h-3" /> Select car
               </span>
-              <span className="text-[9px] text-green-400 font-mono">CLICK TO EQUIP</span>
+              <span className="text-[10px] text-muted">Tap to equip</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {VEHICLES.map((vehicle) => {
@@ -3770,23 +3726,23 @@ export default function App() {
                   <button
                     key={vehicle.id}
                     onClick={() => handleSelectVehicle(vehicle.id)}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`p-2.5 rounded-ui border text-left transition-all cursor-pointer flex flex-col justify-between ${
                       isActive 
-                        ? 'bg-[#00f0ff]/15 border-[#00f0ff] text-white shadow-[0_0_15px_rgba(0,240,255,0.3)] ring-1 ring-[#00f0ff]' 
-                        : 'bg-[#12121f]/60 border-white/10 text-white/70 hover:text-white hover:bg-[#12121f] hover:border-white/25'
+                        ? 'bg-secondary/20 border-secondary text-text' 
+                        : 'bg-steel border-edge text-muted hover:text-text'
                     }`}
                     id={`garage-btn-${vehicle.id}`}
                   >
                     <div className="flex justify-between items-center w-full">
-                      <span className="text-xs font-black font-orbitron text-white">{vehicle.name}</span>
+                      <span className="text-xs font-bold font-display text-text">{vehicle.name}</span>
                       {isActive && (
-                        <span className="text-[8px] bg-green-500/20 text-green-400 border border-green-500/40 px-1 py-0.2 rounded font-mono">
-                          ACTIVE
+                        <span className="text-[10px] bg-primary text-asphalt px-1.5 py-0.5 rounded-ui font-semibold">
+                          Active
                         </span>
                       )}
                     </div>
-                    <span className="text-[9px] text-[#ff2ec4] font-mono mt-0.5">{vehicle.role}</span>
-                    <div className="flex justify-between text-[8px] text-white/50 font-mono mt-1 pt-1 border-t border-white/5">
+                    <span className="text-[10px] text-muted mt-0.5">{vehicle.role}</span>
+                    <div className="flex justify-between text-[10px] text-muted mt-1 pt-1 border-t border-edge">
                       <span>Top: {vehicle.topSpeedLabel}</span>
                       <span>Handling: {vehicle.handlingLabel}</span>
                     </div>
@@ -3802,100 +3758,100 @@ export default function App() {
 
       {/* --- ROTATE TO LANDSCAPE OVERLAY --- */}
       {needsRotate && (
-        <div className="absolute inset-0 z-50 bg-[#05050b]/95 flex flex-col items-center justify-center text-center p-6 safe-pad-t safe-pad-b" id="rotate-overlay">
-          <RotateCcw className="w-12 h-12 text-[#00f0ff] mb-4" />
-          <h2 className="text-2xl font-black font-orbitron text-white">Rotate your phone</h2>
-          <p className="text-white/70 text-sm mt-2 font-rajdhani">Neon Rush is meant to be played in landscape.</p>
+        <div className="absolute inset-0 z-50 bg-asphalt flex flex-col items-center justify-center text-center p-6 safe-pad-t safe-pad-b" id="rotate-overlay">
+          <RotateCcw className="w-12 h-12 text-secondary mb-4" />
+          <h2 className="text-2xl font-bold font-display text-text">Rotate your phone</h2>
+          <p className="text-muted text-sm mt-2 font-body">Neon Rush plays in landscape.</p>
         </div>
       )}
 
       {/* ---------- HOW TO PLAY MODAL (USER FRIENDLY GUIDE) ---------- */}
       {showHelpModal && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#07070f] border border-[#00f0ff]/40 rounded-2xl max-w-lg w-full p-6 text-white shadow-[0_0_40px_rgba(0,240,255,0.3)] relative max-h-[90vh] overflow-y-auto animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-asphalt/95 flex items-center justify-center p-4">
+          <div className="arcade-panel max-w-lg w-full p-6 text-text relative max-h-[90vh] overflow-y-auto animate-fade-in">
             {/* Close button */}
             <button
               onClick={() => setShowHelpModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all cursor-pointer"
-              title="Close Guide"
+              className="arcade-button absolute top-4 right-4 p-2 bg-steel border-edge text-muted cursor-pointer"
+              title="Close guide"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2.5 mb-2 text-[#00f0ff]">
-              <HelpCircle className="w-6 h-6 text-[#00f0ff]" />
-              <h2 className="text-xl font-black font-orbitron tracking-wider">HOW TO PLAY</h2>
+            <div className="flex items-center gap-2.5 mb-2 text-text">
+              <HelpCircle className="w-6 h-6 text-secondary" />
+              <h2 className="text-xl font-bold font-display">How to play</h2>
             </div>
-            <p className="text-xs text-white/70 font-rajdhani border-b border-white/10 pb-3">
-              Neon Rush 3D is a high-speed highway traffic racer. Master lane switching and boost management to survive:
+            <p className="text-xs text-muted font-body border-b border-edge pb-3">
+              Neon Rush 3D is a highway traffic racer. Switch lanes and manage nitro to survive:
             </p>
 
-            <div className="space-y-3.5 mt-4 text-xs font-rajdhani">
+            <div className="space-y-3.5 mt-4 text-xs font-body">
               {/* Concept */}
-              <div className="p-3.5 bg-white/5 rounded-xl border border-white/10">
-                <div className="text-sm font-bold text-[#00f0ff] font-orbitron mb-1 flex items-center gap-1.5">
-                  <Compass className="w-4 h-4 text-[#00f0ff]" /> 1. GAME CONCEPT
+              <div className="p-3.5 rounded-ui bg-steel border border-edge">
+                <div className="text-sm font-bold text-text font-display mb-1 flex items-center gap-1.5">
+                  <Compass className="w-4 h-4 text-secondary" /> 1. Game concept
                 </div>
-                <p className="text-white/80 leading-relaxed">
-                  Drive your racer along a 3-lane futuristic highway cycling across coastal bridges, neon countryside, and cyber skylines. <strong>Traffic cars populate the highway right from the start!</strong> Dodge commuter cars moving at varying speeds to cover maximum distance without crashing.
+                <p className="text-muted leading-relaxed">
+                  Drive your racer along a highway that cycles through coastal roads, countryside and city streets. <strong className="text-text">Traffic appears right from the start.</strong> Dodge cars moving at different speeds to cover the most distance without crashing.
                 </p>
               </div>
 
               {/* Controls */}
-              <div className="p-3.5 bg-white/5 rounded-xl border border-[#ff2ec4]/30">
-                <div className="text-sm font-bold text-[#ff2ec4] font-orbitron mb-1 flex items-center gap-1.5">
-                  <ArrowRight className="w-4 h-4 text-[#ff2ec4]" /> 2. CONTROLS
+              <div className="p-3.5 rounded-ui bg-steel border border-edge">
+                <div className="text-sm font-bold text-text font-display mb-1 flex items-center gap-1.5">
+                  <ArrowRight className="w-4 h-4 text-primary" /> 2. Controls
                 </div>
-                <ul className="space-y-2 text-white/80 mt-2 font-mono">
+                <ul className="space-y-2 text-muted mt-2">
                   <li className="flex items-center justify-between text-xs">
-                    <span className="font-rajdhani text-white">Steer Left / Right:</span>
-                    <span className="text-[#00f0ff] bg-black/60 px-2.5 py-1 rounded border border-[#00f0ff]/30 font-bold">A / D or ← / →</span>
+                    <span className="text-text">Steer left / right:</span>
+                    <span className="text-secondary bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">A / D or ← / →</span>
                   </li>
                   <li className="flex items-center justify-between text-xs">
-                    <span className="font-rajdhani text-white">Nitro Speed Boost:</span>
-                    <span className="text-[#ff2ec4] bg-black/60 px-2.5 py-1 rounded border border-[#ff2ec4]/40 font-bold">Hold W / ↑ / Space</span>
+                    <span className="text-text">Nitro boost:</span>
+                    <span className="text-primary bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">Hold W / ↑ / Space</span>
                   </li>
                   <li className="flex items-center justify-between text-xs">
-                    <span className="font-rajdhani text-white">Pause / Resume:</span>
-                    <span className="text-white bg-black/60 px-2.5 py-1 rounded border border-white/20">P Key</span>
+                    <span className="text-text">Pause / resume:</span>
+                    <span className="text-text bg-asphalt px-2.5 py-1 rounded-ui border border-edge">P key</span>
                   </li>
                   <li className="flex items-center justify-between text-xs">
-                    <span className="font-rajdhani text-white">Touch / Screen Buttons:</span>
-                    <span className="text-amber-300 bg-black/60 px-2.5 py-1 rounded border border-amber-300/30">Use on-screen steering & boost buttons</span>
+                    <span className="text-text">Touch controls:</span>
+                    <span className="text-text bg-asphalt px-2.5 py-1 rounded-ui border border-edge">On-screen buttons</span>
                   </li>
                 </ul>
               </div>
 
               {/* Boost Mechanic */}
-              <div className="p-3.5 bg-white/5 rounded-xl border border-amber-400/30">
-                <div className="text-sm font-bold text-amber-400 font-orbitron mb-1 flex items-center gap-1.5">
-                  <Flame className="w-4 h-4 text-amber-400" /> 3. NITRO BOOST MECHANIC
+              <div className="p-3.5 rounded-ui bg-steel border border-edge">
+                <div className="text-sm font-bold text-text font-display mb-1 flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-primary" /> 3. Nitro boost
                 </div>
-                <p className="text-white/80 leading-relaxed">
-                  Hold down <strong>W / ↑ / Space or the Boost button</strong> to activate nitro overdrive. The camera tightens, the HUD pulses with intensity, and you earn <strong>+80% bonus score multiplier</strong>. Releasing boost lets your nitro fuel recharge over time.
+                <p className="text-muted leading-relaxed">
+                  Hold down <strong className="text-text">W / ↑ / Space or the boost button</strong> to use nitro overdrive. You earn a <strong className="text-text">+80% score multiplier</strong>. Release it and the tank refills over time.
                 </p>
               </div>
 
               {/* Vehicles */}
-              <div className="p-3.5 bg-white/5 rounded-xl border border-white/10">
-                <div className="text-sm font-bold text-white font-orbitron mb-1 flex items-center gap-1.5">
-                  <Cpu className="w-4 h-4 text-[#00f0ff]" /> 4. SELECT YOUR VEHICLE
+              <div className="p-3.5 rounded-ui bg-steel border border-edge">
+                <div className="text-sm font-bold text-text font-display mb-1 flex items-center gap-1.5">
+                  <Cpu className="w-4 h-4 text-secondary" /> 4. Choose your car
                 </div>
-                <p className="text-white/80 leading-relaxed">
-                  Choose from 4 performance vehicle configurations in the <strong>Garage</strong>:
+                <p className="text-muted leading-relaxed">
+                  Pick from 4 cars in the <strong className="text-text">Garage</strong>:
                 </p>
-                <div className="grid grid-cols-2 gap-2 mt-2 font-mono text-[11px]">
-                  <div className="p-2 bg-black/40 rounded border border-white/10">
-                    <strong className="text-[#00f0ff]">VX-Titan:</strong> Heavy armor shield & high stability
+                <div className="grid grid-cols-2 gap-2 mt-2 text-[11px]">
+                  <div className="p-2 bg-asphalt rounded-ui border border-edge">
+                    <strong className="text-text">VX-Titan:</strong> <span className="text-muted">Heavy armour, high stability</span>
                   </div>
-                  <div className="p-2 bg-black/40 rounded border border-white/10">
-                    <strong className="text-[#ff2ec4]">Neon-Blade:</strong> Extreme top speed for setting records
+                  <div className="p-2 bg-asphalt rounded-ui border border-edge">
+                    <strong className="text-text">Neon-Blade:</strong> <span className="text-muted">Extreme top speed</span>
                   </div>
-                  <div className="p-2 bg-black/40 rounded border border-white/10">
-                    <strong className="text-cyan-300">Cyber-Glide:</strong> Ultra-responsive lane transition agility
+                  <div className="p-2 bg-asphalt rounded-ui border border-edge">
+                    <strong className="text-text">Cyber-Glide:</strong> <span className="text-muted">Quick lane changes</span>
                   </div>
-                  <div className="p-2 bg-black/40 rounded border border-white/10">
-                    <strong className="text-amber-400">BMW E34:</strong> Retro stance cruiser tuned for high-speed highway drift
+                  <div className="p-2 bg-asphalt rounded-ui border border-edge">
+                    <strong className="text-text">BMW E34:</strong> <span className="text-muted">Retro cruiser, good drift</span>
                   </div>
                 </div>
               </div>
@@ -3903,9 +3859,9 @@ export default function App() {
 
             <button
               onClick={() => setShowHelpModal(false)}
-              className="mt-5 w-full py-3.5 bg-gradient-to-r from-[#00f0ff] to-[#ff2ec4] text-black font-black rounded-xl font-orbitron tracking-widest text-sm hover:scale-102 transition-all cursor-pointer shadow-[0_0_25px_rgba(0,240,255,0.4)] flex items-center justify-center gap-2"
+              className="arcade-button mt-5 w-full py-3.5 bg-primary text-asphalt font-bold rounded-ui font-display text-sm cursor-pointer flex items-center justify-center gap-2"
             >
-              <Play className="w-4 h-4 fill-current" /> READY TO RACE
+              <Play className="w-4 h-4 fill-current" /> Ready
             </button>
           </div>
         </div>
