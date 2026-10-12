@@ -767,6 +767,21 @@ function DebugLabel({ portrait }: { portrait: boolean }) {
   );
 }
 
+/* ---------- CAMERA FOV BY ASPECT (Step 2.8) ----------
+   What decides how much road fits left/right is the HORIZONTAL fov, so we keep
+   that constant and derive the vertical fov from the current aspect ratio. The
+   constant is the horizontal fov implied by the old fixed 72deg vertical at 16:9,
+   so 16:9 looks exactly like before and other ratios keep the same road width. */
+const BASE_HORIZONTAL_FOV = 2 * Math.atan(Math.tan((72 * Math.PI / 180) / 2) * (16 / 9)) * 180 / Math.PI;
+const MIN_VERTICAL_FOV = 40;
+const MAX_VERTICAL_FOV = 90;
+
+function verticalFovForAspect(aspect: number): number {
+  const halfHorizontal = (BASE_HORIZONTAL_FOV * Math.PI / 180) / 2;
+  const vertical = 2 * Math.atan(Math.tan(halfHorizontal) / Math.max(0.1, aspect)) * 180 / Math.PI;
+  return Math.min(MAX_VERTICAL_FOV, Math.max(MIN_VERTICAL_FOV, vertical));
+}
+
 /* ---------- PIXEL RATIO BUDGET (Step 2.8) ----------
    Caps the device pixel ratio per device type and also keeps the total number of
    rendered pixels under a budget, so 4K panels do not try to fill 8M+ pixels. */
@@ -1117,6 +1132,10 @@ export default function App() {
 
     const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 500);
     camera.position.set(0, 1.85, CAR_Z + 4.8);
+    // Step 2.8: derive the vertical fov from the aspect ratio from the very first frame.
+    camera.aspect = window.innerWidth / Math.max(1, window.innerHeight);
+    camera.fov = verticalFovForAspect(camera.aspect);
+    camera.updateProjectionMatrix();
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -1138,7 +1157,8 @@ export default function App() {
     const resizeObserver = new ResizeObserver((entries) => {
       if (!entries || entries.length === 0) return;
       const { width, height } = entries[0].contentRect;
-      camera.aspect = width / height;
+      camera.aspect = width / Math.max(1, height);
+      camera.fov = verticalFovForAspect(camera.aspect);
       camera.updateProjectionMatrix();
       // Step 2.8: re-budget the pixel ratio on every resize (rotation, window, monitor change).
       renderer.setPixelRatio(getPixelRatio(width, height));
@@ -3084,9 +3104,9 @@ export default function App() {
       camera.position.y += (targetCamY - camera.position.y) * 0.18;
       camera.position.z += (targetCamZ - camera.position.z) * 0.18;
       
-      // Speed visual FOV warping with boost expansion
+      // Speed visual FOV warping with boost expansion (additive on top of the aspect fov)
       const boostFOVBonus = boostActive ? 12 : 0;
-      const targetFOV = 72 + (activeSpeed / MAX_SPEED) * 15 + boostFOVBonus;
+      const targetFOV = verticalFovForAspect(camera.aspect) + (activeSpeed / MAX_SPEED) * 15 + boostFOVBonus;
       camera.fov += (targetFOV - camera.fov) * 0.08;
       camera.updateProjectionMatrix();
 
