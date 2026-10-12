@@ -808,6 +808,9 @@ export default function App() {
   const isPortrait = useIsPortrait();
   const [fullscreenOn, setFullscreenOn] = useState<boolean>(false);
   const [showQuitConfirm, setShowQuitConfirm] = useState<boolean>(false);
+  // Step 2.8: set when the WebGL renderer cannot be created, so we can show a
+  // plain message instead of a blank screen.
+  const [webglFailed, setWebglFailed] = useState<boolean>(false);
 
   /* ---------- REFS ---------- */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -833,20 +836,35 @@ export default function App() {
     try { localStorage.setItem('neon_rush_fullscreen', on ? 'true' : 'false'); } catch {}
   };
 
+  // iPhone/iPad Safari have no Fullscreen API. Hide the button there and rely on
+  // the Rotate screen instead of showing a button that can never work.
+  const canFullscreen = typeof document !== 'undefined' && (
+    typeof document.documentElement.requestFullscreen === 'function' ||
+    typeof (document.documentElement as any).webkitRequestFullscreen === 'function'
+  );
+
   const enterFullscreen = () => {
     try {
       const root = document.documentElement;
-      if (typeof root.requestFullscreen !== 'function') return;
-      root.requestFullscreen().then(() => {
+      const request = root.requestFullscreen || (root as any).webkitRequestFullscreen;
+      if (typeof request !== 'function') return;
+      const result = request.call(root);
+      if (result && typeof result.then === 'function') {
+        result.then(() => {
+          setFullscreenOn(true);
+          persistFullscreen(true);
+          try {
+            const orientation = screen.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
+            if (orientation && typeof orientation.lock === 'function') {
+              orientation.lock('landscape').catch(() => {});
+            }
+          } catch {}
+        }).catch(() => {});
+      } else {
+        // Old WebKit API returns nothing; assume it worked and let the event correct us.
         setFullscreenOn(true);
         persistFullscreen(true);
-        try {
-          const orientation = screen.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
-          if (orientation && typeof orientation.lock === 'function') {
-            orientation.lock('landscape').catch(() => {});
-          }
-        } catch {}
-      }).catch(() => {});
+      }
     } catch {}
   };
 
@@ -1083,11 +1101,19 @@ export default function App() {
     const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 500);
     camera.position.set(0, 1.85, CAR_Z + 4.8);
 
-    const renderer = new THREE.WebGLRenderer({ 
-      canvas: canvasRef.current, 
-      antialias: true,
-      alpha: false 
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvasRef.current,
+        antialias: true,
+        alpha: false
+      });
+    } catch (e) {
+      // No WebGL on this device: show a plain message, never a blank screen.
+      console.warn('WebGL unavailable', e);
+      setWebglFailed(true);
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(COLORS.bg, 1);
 
@@ -3519,14 +3545,16 @@ export default function App() {
                     >
                       <RotateCcw className="w-3.5 h-3.5" /> Restart
                     </button>
-                    <button 
-                      onClick={toggleFullscreen}
-                      className="arcade-button w-full py-2.5 bg-steel text-muted font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-1.5"
-                      id="btn-fullscreen-pause"
-                    >
-                      {fullscreenOn ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
-                      {fullscreenOn ? 'Exit fullscreen' : 'Fullscreen'}
-                    </button>
+                    {canFullscreen && (
+                      <button
+                        onClick={toggleFullscreen}
+                        className="arcade-button w-full py-2.5 bg-steel text-muted font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-1.5"
+                        id="btn-fullscreen-pause"
+                      >
+                        {fullscreenOn ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
+                        {fullscreenOn ? 'Exit fullscreen' : 'Fullscreen'}
+                      </button>
+                    )}
                     <button 
                       onClick={() => setShowQuitConfirm(true)}
                       className="arcade-button w-full py-2.5 bg-steel text-text font-semibold cursor-pointer text-sm font-body flex items-center justify-center gap-1.5"
@@ -3591,14 +3619,16 @@ export default function App() {
                       >
                         {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                       </button>
-                      <button
-                        className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
-                        onClick={toggleFullscreen}
-                        title={fullscreenOn ? "Exit fullscreen" : "Go fullscreen"}
-                        id="btn-fullscreen-menu"
-                      >
-                        {fullscreenOn ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                      </button>
+                      {canFullscreen && (
+                        <button
+                          className="arcade-button p-2 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
+                          onClick={toggleFullscreen}
+                          title={fullscreenOn ? "Exit fullscreen" : "Go fullscreen"}
+                          id="btn-fullscreen-menu"
+                        >
+                          {fullscreenOn ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                        </button>
+                      )}
                     </div>
                     {isEditingName ? (
                       <div className="flex items-center gap-1">
@@ -4147,6 +4177,19 @@ export default function App() {
           <h2 className="text-2xl font-bold font-display text-text">Rotate your phone</h2>
           <p className="text-muted text-sm mt-2 font-body">Neon Rush plays in landscape.</p>
           <DebugLabel portrait={isPortrait} />
+        </div>
+      )}
+
+      {/* ---------- WEBGL UNAVAILABLE (Step 2.8): plain message, not a blank screen ---------- */}
+      {webglFailed && (
+        <div
+          className="absolute inset-0 z-[70] bg-asphalt flex flex-col items-center justify-center text-center p-6 safe-pad-t safe-pad-b"
+          id="webgl-error-overlay"
+        >
+          <h2 className="text-2xl font-bold font-display text-text">Game cannot start</h2>
+          <p className="text-muted text-sm mt-2 font-body max-w-sm">
+            This device cannot run the game: WebGL is not available.
+          </p>
         </div>
       )}
     </div>
