@@ -749,6 +749,8 @@ export default function App() {
   const [boostFuel, setBoostFuel] = useState<number>(100);
   const [isBoosting, setIsBoosting] = useState<boolean>(false);
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
+  const [garageOpen, setGarageOpen] = useState<boolean>(false);
+  const [isPortrait, setIsPortrait] = useState<boolean>(false);
 
   /* ---------- REFS ---------- */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -758,6 +760,8 @@ export default function App() {
   // Active vehicle state ref for the fast-paced Three.js animation loop
   const activeVehicleRef = useRef<Vehicle>(VEHICLES[0]);
   const pausedRef = useRef<boolean>(false);
+  // True when the app auto-paused the game because the phone is in portrait.
+  const autoPausedRef = useRef<boolean>(false);
 
   // Clean countdown timers on unmount
   const clearCountdownTimers = () => {
@@ -803,6 +807,34 @@ export default function App() {
   useEffect(() => {
     synth.setMute(muted);
   }, [muted]);
+
+  // Track portrait / landscape. The game is meant to be played in landscape.
+  useEffect(() => {
+    const query = window.matchMedia('(orientation: portrait)');
+    const update = () => setIsPortrait(query.matches);
+    update();
+    query.addEventListener('change', update);
+    window.addEventListener('resize', update);
+    return () => {
+      query.removeEventListener('change', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  // While in portrait during a race, auto-pause and show the rotate hint.
+  const needsRotate = isPortrait && (gameState === 'playing' || gameState === 'countdown');
+
+  useEffect(() => {
+    if (needsRotate) {
+      if (!paused) {
+        setPaused(true);
+        autoPausedRef.current = true;
+      }
+    } else if (autoPausedRef.current) {
+      autoPausedRef.current = false;
+      setPaused(false);
+    }
+  }, [needsRotate, paused]);
 
   // Sync active vehicle ref when user clicks in React UI
   const handleSelectVehicle = (id: 'titan' | 'blade' | 'glide' | 'bmw') => {
@@ -886,6 +918,20 @@ export default function App() {
   startRaceCountdownRef.current = startRaceCountdown;
 
   const startGame = () => {
+    // Try to go fullscreen and lock landscape. Many browsers refuse one or both,
+    // so every failure is ignored silently.
+    try {
+      const root = document.documentElement;
+      if (typeof root.requestFullscreen === 'function') {
+        root.requestFullscreen().catch(() => {});
+      }
+      const orientation = screen.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
+      if (orientation && typeof orientation.lock === 'function') {
+        orientation.lock('landscape').catch(() => {});
+      }
+    } catch (e) {
+      // Ignore: fullscreen/orientation lock is optional.
+    }
     startRaceCountdown();
   };
 
@@ -3127,115 +3173,13 @@ export default function App() {
   const progressToObjective = Math.min(100, Math.floor((dodgeCount / 15) * 100));
 
   return (
-    <div className="w-full h-screen bg-[#05050b] text-[#eaf7ff] font-sans flex flex-col overflow-hidden select-none" id="root-container">
-      
-      {/* ---------- TOP NAVIGATION BAR ---------- */}
-      <nav className="h-16 border-b border-[#00f0ff]/20 px-8 flex items-center justify-between bg-[#07070f] z-20 shrink-0" id="top-nav">
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 bg-gradient-to-br from-[#00f0ff] to-[#ff2ec4] rounded-sm rotate-45 flex items-center justify-center animate-pulse">
-            <div className="w-4 h-4 bg-[#05050b] rounded-sm"></div>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black tracking-widest text-white font-orbitron">NEON RUSH</span>
-            <span className="text-[9px] tracking-[0.2em] text-[#00f0ff]/80 font-mono -mt-1">GRID RACER 3D</span>
-          </div>
-        </div>
+    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#05050b] text-[#eaf7ff] font-sans select-none" id="root-container">
 
-        {/* System tabs */}
-        <div className="hidden md:flex gap-6 text-xs font-semibold tracking-wider uppercase font-rajdhani items-center">
-          <div className="text-[#00f0ff] border-b-2 border-[#00f0ff] pb-1 cursor-pointer flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 animate-spin-slow text-[#00f0ff]" />
-            <span>The Grid</span>
-          </div>
-          <div className="text-white/60 hover:text-[#00f0ff] transition-colors cursor-pointer flex items-center gap-1.5" onClick={() => {
-            const container = document.getElementById('garage-section');
-            container?.scrollIntoView({ behavior: 'smooth' });
-          }}>
-            <Cpu className="w-3.5 h-3.5" />
-            <span>Garage</span>
-          </div>
-          <button
-            onClick={() => setShowHelpModal(true)}
-            className="px-2.5 py-1 rounded bg-[#00f0ff]/10 hover:bg-[#00f0ff]/20 border border-[#00f0ff]/40 text-[#00f0ff] hover:text-white transition-all cursor-pointer flex items-center gap-1.5 text-[11px]"
-            title="How to Play"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>How to Play</span>
-          </button>
-        </div>
-
-        {/* Audio Sync, Help Mobile & Profile CodeName */}
-        <div className="flex items-center gap-3 sm:gap-5">
-          <button
-            onClick={() => setShowHelpModal(true)}
-            className="md:hidden p-1.5 rounded bg-white/5 border border-white/10 hover:border-[#00f0ff]/50 text-white/70 hover:text-[#00f0ff] transition-all cursor-pointer flex items-center justify-center"
-            title="How to Play"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
-
-          <button 
-            className="p-1.5 rounded bg-white/5 border border-white/10 hover:border-[#00f0ff]/50 text-white/70 hover:text-[#00f0ff] transition-all cursor-pointer flex items-center justify-center" 
-            onClick={() => setMuted(!muted)}
-            title={muted ? "Unmute Audio" : "Mute Audio"}
-            id="audio-toggle"
-          >
-            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 animate-pulse" />}
-          </button>
-
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-[10px] uppercase text-white/50 tracking-wider">DRIVER PROFILE</div>
-              {isEditingName ? (
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value.toUpperCase())}
-                    className="bg-black/80 border border-[#00f0ff] text-xs px-2 py-0.5 rounded text-white font-mono w-24 focus:outline-none"
-                    maxLength={12}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveUsername();
-                      if (e.key === 'Escape') setIsEditingName(false);
-                    }}
-                    autoFocus
-                  />
-                  <button 
-                    onClick={handleSaveUsername}
-                    className="text-[10px] text-green-400 bg-green-900/40 px-1.5 py-0.5 rounded border border-green-500/30 hover:bg-green-400 hover:text-black transition-all cursor-pointer"
-                  >
-                    SAVE
-                  </button>
-                </div>
-              ) : (
-                <div 
-                  className="text-xs font-bold text-[#00f0ff] font-mono hover:underline cursor-pointer flex items-center gap-1 justify-end"
-                  onClick={() => {
-                    setNameInput(username);
-                    setIsEditingName(true);
-                  }}
-                  title="Click to edit callsign"
-                >
-                  <span>{username}</span>
-                  <span className="text-[9px] opacity-40 font-normal">(EDIT)</span>
-                </div>
-              )}
-            </div>
-            <div className="w-9 h-9 rounded-full border border-[#ff2ec4]/60 bg-[#12121f] flex items-center justify-center overflow-hidden shadow-[0_0_10px_rgba(255,46,196,0.25)]">
-              <User className="w-4 h-4 text-[#ff2ec4]" />
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* ---------- MAIN GRID BODY ---------- */}
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0" id="main-content">
-        
-        {/* CENTER COLUMN: ACTIVE 3D GAMEPLAY VIEW */}
-        <section className="flex-1 relative p-3 sm:p-5 lg:p-6 flex flex-col min-w-0" id="gameplay-viewport">
-          <div 
+      {/* ---------- FULL-SCREEN 3D GAMEPLAY VIEW (canvas fills the whole screen) ---------- */}
+      <section className="absolute inset-0" id="gameplay-viewport">
+          <div
             ref={containerRef}
-            className="w-full h-full rounded-xl border border-[#00f0ff]/20 bg-gradient-to-b from-[#12121f] to-[#05050b] relative overflow-hidden flex flex-col shadow-[inset_0_0_40px_rgba(0,240,255,0.06)]"
+            className="w-full h-full relative overflow-hidden"
             id="game-frame-container"
           >
             {/* Real WebGL Canvas Render Element */}
@@ -3376,7 +3320,7 @@ export default function App() {
             )}
 
             {/* --- OVERLAY: PAUSED SCREEN --- */}
-            {paused && gameState === 'playing' && (
+            {paused && gameState === 'playing' && !needsRotate && (
               <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20 pointer-events-auto" id="paused-screen-overlay">
                 <div className="max-w-md w-full animate-fade-in bg-[#07070f]/95 border border-[#00f0ff]/30 p-6 rounded-2xl shadow-[0_0_30px_rgba(0,240,255,0.2)]">
                   <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-[#00f0ff] font-orbitron drop-shadow-[0_0_20px_rgba(0,240,255,0.8)] animate-pulse">
@@ -3421,82 +3365,104 @@ export default function App() {
               </div>
             )}
 
-            {/* --- OVERLAY: TITLE SCREEN (USER FRIENDLY & EASY TO UNDERSTAND) --- */}
+            {/* --- OVERLAY: MAIN MENU (PLAY always visible, no scrolling) --- */}
             {gameState === 'title' && (
-              <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center p-4 sm:p-6 text-center z-10 overflow-y-auto" id="title-screen-overlay">
-                <div className="max-w-xl w-full my-auto">
-                  {/* Title & Tagline */}
-                  <div className="inline-block px-3 py-1 rounded-full bg-[#00f0ff]/10 border border-[#00f0ff]/30 text-[#00f0ff] text-[10px] sm:text-xs font-mono tracking-widest uppercase mb-2">
-                    🚗 3D HIGHWAY TRAFFIC RACER
+              <div
+                className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center text-center z-10 overflow-y-auto safe-pad-t safe-pad-b"
+                id="title-screen-overlay"
+              >
+                <div className="w-full max-w-sm flex flex-col items-center gap-3 px-4">
+
+                  {/* Audio toggle and driver name (moved out of the removed nav bar) */}
+                  <div className="w-full flex items-center justify-between gap-2">
+                    <button
+                      className="p-2 rounded-full bg-white/5 border border-white/10 text-white/70 cursor-pointer flex items-center justify-center"
+                      onClick={() => setMuted(!muted)}
+                      title={muted ? "Unmute Audio" : "Mute Audio"}
+                      id="audio-toggle"
+                    >
+                      {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    </button>
+                    {isEditingName ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          value={nameInput}
+                          onChange={(e) => setNameInput(e.target.value.toUpperCase())}
+                          className="bg-black/80 border border-[#00f0ff] text-xs px-2 py-1 rounded text-white font-mono w-24 focus:outline-none"
+                          maxLength={12}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveUsername();
+                            if (e.key === 'Escape') setIsEditingName(false);
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          onClick={handleSaveUsername}
+                          className="text-[10px] text-green-400 bg-green-900/40 px-2 py-1 rounded border border-green-500/30 cursor-pointer"
+                        >
+                          SAVE
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="text-xs font-bold text-white font-mono cursor-pointer flex items-center gap-1"
+                        onClick={() => {
+                          setNameInput(username);
+                          setIsEditingName(true);
+                        }}
+                        title="Click to edit driver name"
+                      >
+                        <span>{username}</span>
+                        <span className="text-[9px] opacity-40 font-normal">(EDIT)</span>
+                      </div>
+                    )}
                   </div>
-                  <h1 className="text-4xl sm:text-6xl font-black italic tracking-tighter text-white font-orbitron drop-shadow-[0_0_25px_rgba(255,46,196,0.9)] animate-pulse">
+
+                  <div className="inline-block px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white/80 text-[11px] font-semibold">
+                    3D highway traffic racer
+                  </div>
+
+                  <h1 className="text-4xl sm:text-6xl font-black italic tracking-tighter text-white font-orbitron">
                     NEON RUSH 3D
                   </h1>
-                  
-                  {/* Concept Card: Immediate explanation of what the game is */}
-                  <div className="mt-4 p-4 rounded-xl bg-[#07070f]/90 border border-[#00f0ff]/30 text-left shadow-[0_0_20px_rgba(0,240,255,0.15)]">
-                    <p className="text-sm font-semibold text-white leading-relaxed font-rajdhani">
-                      <strong className="text-[#00f0ff]">Objective:</strong> Live traffic cars are on the highway from the start! Steer across 3 lanes, dodge slower commuters and fast overtaking cars, and trigger your <strong className="text-[#ff2ec4]">Nitro Boost</strong> to rack up high speeds and achieve the maximum distance!
-                    </p>
-                    
-                    {/* 3 Steps Visual Guide */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-3 pt-3 border-t border-white/10">
-                      <div className="p-2.5 rounded-lg bg-white/5 border border-white/10 text-center">
-                        <div className="text-[#00f0ff] text-base font-bold font-orbitron flex items-center justify-center gap-1">
-                          <ArrowLeft className="w-3.5 h-3.5" /> STEER <ArrowRight className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="text-[11px] text-white font-medium mt-1">Change Lanes Left / Right</div>
-                        <div className="text-[10px] text-white/50 font-mono mt-0.5">A / D or ← / →</div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-white/5 border border-[#ff2ec4]/30 text-center">
-                        <div className="text-[#ff2ec4] text-base font-bold font-orbitron flex items-center justify-center gap-1">
-                          <Flame className="w-4 h-4" /> BOOST
-                        </div>
-                        <div className="text-[11px] text-white font-medium mt-1">Nitro Speed Boost</div>
-                        <div className="text-[10px] text-white/50 font-mono mt-0.5">Hold W / ↑ / Space</div>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-white/5 border border-amber-400/30 text-center">
-                        <div className="text-amber-400 text-base font-bold font-orbitron flex items-center justify-center gap-1">
-                          <Shield className="w-4 h-4" /> SURVIVE
-                        </div>
-                        <div className="text-[11px] text-white font-medium mt-1">Dodge All Traffic</div>
-                        <div className="text-[10px] text-white/50 font-mono mt-0.5">Crash = Game Over</div>
-                      </div>
-                    </div>
-                  </div>
 
                   {highScore > 0 && (
-                    <div className="mt-4 text-[#ffb703] font-orbitron text-xs sm:text-sm tracking-widest flex items-center justify-center gap-1.5 font-bold">
-                      <Trophy className="w-4 h-4" /> BEST DISTANCE RECORD: {highScore}M
+                    <div className="text-[#ffb703] font-orbitron text-sm tracking-wider flex items-center gap-1.5 font-bold">
+                      <Trophy className="w-4 h-4" /> Best distance: {highScore}m
                     </div>
                   )}
 
-                  {/* Primary Big Start Button */}
-                  <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center items-center">
-                    <button 
+                  <div className="w-full flex flex-col gap-3 mt-2">
+                    <button
                       onClick={startGame}
-                      className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-[#00f0ff] via-white to-[#ff2ec4] text-black font-black rounded-full hover:scale-105 transition-all shadow-[0_0_35px_rgba(0,240,255,0.6)] cursor-pointer text-base font-orbitron tracking-widest flex items-center justify-center gap-2"
+                      className="w-full min-h-14 px-6 py-4 bg-[#00f0ff] text-black font-black text-lg font-orbitron tracking-widest cursor-pointer flex items-center justify-center gap-2 active:scale-95 transition-transform"
                       id="btn-engage-engine"
                     >
-                      <Play className="w-5 h-5 fill-current" /> START RACE
+                      <Play className="w-6 h-6 fill-current" /> PLAY
                     </button>
-                    <button 
-                      onClick={() => setShowHelpModal(true)}
-                      className="w-full sm:w-auto px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/25 text-white font-semibold rounded-full transition-all cursor-pointer text-xs font-orbitron tracking-wider flex items-center justify-center gap-1.5"
-                    >
-                      <HelpCircle className="w-4 h-4 text-[#00f0ff]" /> HOW TO PLAY
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setGarageOpen(true)}
+                        className="min-h-12 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
+                        id="btn-garage"
+                      >
+                        <Car className="w-4 h-4" /> Garage
+                      </button>
+                      <button
+                        onClick={() => setShowHelpModal(true)}
+                        className="min-h-12 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
+                        id="btn-how-to-play"
+                      >
+                        <HelpCircle className="w-4 h-4" /> How to play
+                      </button>
+                    </div>
                   </div>
-                  <p className="mt-2 text-white/40 text-[11px] font-mono">
-                    [ You can also press ENTER or SPACE on your keyboard to play ]
-                  </p>
+
                 </div>
               </div>
             )}
 
-            {/* --- OVERLAY: GAME OVER SCREEN --- */}
             {gameState === 'gameover' && (
               <div className="absolute inset-0 bg-[#05050b]/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-10" id="gameover-screen-overlay">
                 <div className="max-w-md w-full animate-fade-in bg-[#07070f]/95 border border-[#ff2ec4]/40 p-6 rounded-2xl shadow-[0_0_30px_rgba(255,46,196,0.3)]">
@@ -3620,26 +3586,28 @@ export default function App() {
               </div>
             )}
 
-            {/* Aesthetic spinning radar widget */}
-            <div className="absolute bottom-6 left-6 w-16 h-16 border border-[#ff2ec4]/30 rounded-full hidden md:flex items-center justify-center pointer-events-none z-10">
-              <div className="w-11 h-11 border-t-2 border-r-2 border-[#ff2ec4] rounded-full animate-spin"></div>
-              <span className="absolute text-[8px] font-mono text-[#ff2ec4]">SYS_SCAN</span>
-            </div>
-
           </div>
         </section>
 
-        {/* RIGHT COLUMN: ACTIVE VEHICLE SPECIFICATIONS */}
-        <aside className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-[#00f0ff]/10 bg-[#07070f]/75 p-5 flex flex-col shrink-0 overflow-y-auto" id="garage-section">
+      {/* --- GARAGE OVERLAY (temporary car picker; real Garage arrives in Step 7) --- */}
+      {garageOpen && (
+        <div className="absolute inset-0 z-40 bg-[#05050b]/95 flex flex-col safe-pad-t safe-pad-b" id="garage-overlay">
+          <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
+            <h2 className="text-lg font-black font-orbitron text-white tracking-wide">Garage</h2>
+            <button
+              onClick={() => setGarageOpen(false)}
+              className="min-h-12 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm cursor-pointer flex items-center gap-2"
+              id="garage-back-btn"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
             <div className="flex items-center gap-2">
               <Cpu className="w-4 h-4 text-[#ff2ec4]" />
               <h3 className="text-xs font-bold text-[#ff2ec4] tracking-[0.2em] uppercase font-orbitron">Active Vehicle</h3>
             </div>
-            <span className="flex items-center gap-1.5 text-[9px] font-mono text-green-400 bg-green-950/40 px-2 py-0.5 rounded border border-green-500/30">
-              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
-              ONLINE
-            </span>
           </div>
 
           {/* Vehicle Wireframe Representation Preview */}
@@ -3719,9 +3687,6 @@ export default function App() {
               </div>
 
               {/* Corner metadata badges */}
-              <div className="absolute top-2 left-2 flex items-center gap-1 text-[8px] font-mono text-[#00f0ff] uppercase tracking-wider bg-black/50 px-1.5 py-0.5 rounded border border-[#00f0ff]/20">
-                <Shield className="w-2.5 h-2.5" /> SYS // SYNCHRONIZED
-              </div>
 
               <div className="absolute bottom-2 left-2 text-[8px] font-mono text-white/50 uppercase flex items-center gap-2">
                 <span>CORE_ID: {activeVehicle.id.toUpperCase()}</span>
@@ -3830,39 +3795,19 @@ export default function App() {
               })}
             </div>
           </div>
-        </aside>
-      </main>
 
-      {/* ---------- BOTTOM STATUS BAR ---------- */}
-      <footer className="h-10 bg-black border-t border-[#00f0ff]/10 px-4 sm:px-8 flex items-center justify-between shrink-0 text-[10px] font-mono z-20" id="footer">
-        <div className="flex gap-4 sm:gap-6 items-center text-white/50 uppercase">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span> 
-            Tokyo Gate: <strong className="text-green-400">{ping}ms</strong>
-          </span>
-          <span className="hidden sm:inline">Build: v4.26.0-Sleek</span>
-          {gameState === 'playing' && (
-            <span className="hidden md:inline text-[#00f0ff]/90 animate-pulse font-semibold">
-              ⚡ LIVE RACING HIGHWAY (TRAFFIC ACTIVE)
-            </span>
-          )}
-        </div>
-
-        <div className="flex gap-3 sm:gap-4 items-center">
-          <button
-            onClick={() => setShowHelpModal(true)}
-            className="text-[#00f0ff] hover:underline cursor-pointer flex items-center gap-1"
-          >
-            <HelpCircle className="w-3 h-3" />
-            <span>Game Guide</span>
-          </button>
-          <div className="flex gap-1.5">
-            <div className="w-2 h-2 bg-[#00f0ff] rounded-full shadow-[0_0_6px_#00f0ff]"></div>
-            <div className="w-2 h-2 bg-[#ff2ec4] rounded-full shadow-[0_0_6px_#ff2ec4]"></div>
-            <div className="w-2 h-2 bg-[#ffb703] rounded-full shadow-[0_0_6px_#ffb703]"></div>
           </div>
         </div>
-      </footer>
+      )}
+
+      {/* --- ROTATE TO LANDSCAPE OVERLAY --- */}
+      {needsRotate && (
+        <div className="absolute inset-0 z-50 bg-[#05050b]/95 flex flex-col items-center justify-center text-center p-6 safe-pad-t safe-pad-b" id="rotate-overlay">
+          <RotateCcw className="w-12 h-12 text-[#00f0ff] mb-4" />
+          <h2 className="text-2xl font-black font-orbitron text-white">Rotate your phone</h2>
+          <p className="text-white/70 text-sm mt-2 font-rajdhani">Neon Rush is meant to be played in landscape.</p>
+        </div>
+      )}
 
       {/* ---------- HOW TO PLAY MODAL (USER FRIENDLY GUIDE) ---------- */}
       {showHelpModal && (

@@ -34,6 +34,35 @@
   50% { opacity: 1; transform: scale(1.08); filter: drop-shadow(0 0 12px #00f0ff); }
 }
 
+/* ---------- MOBILE APP SHELL (Step 2: fixed screen, no page scroll) ---------- */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* No pull-to-refresh, no rubber-band scrolling, no double-tap zoom. */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+canvas {
+  /* Stops the browser stealing touch gestures from the game canvas. */
+  touch-action: none;
+}
+
+/* Safe-area padding for notched phones in portrait/landscape. */
+.safe-pad-t { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+.safe-pad-b { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+.safe-pad-l { padding-left: max(0.75rem, env(safe-area-inset-left)); }
+.safe-pad-r { padding-right: max(0.75rem, env(safe-area-inset-right)); }
+
 .animate-hud-vibrate-subtle {
   animation: hud-jitter-subtle 0.16s infinite linear;
 }
