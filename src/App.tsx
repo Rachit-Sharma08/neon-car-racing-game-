@@ -3643,16 +3643,14 @@ export default function App() {
               </div>
             )}
 
-            {/* --- OVERLAY: MAIN MENU (Step 2.6: landscape-first, fits 915x412 and 800x360) --- */}
+            {/* --- OVERLAY: MAIN MENU (Step 2.9: anchored to the screen edges, not a centre band) --- */}
             {gameState === 'title' && (
               <div
                 className="absolute inset-0 bg-asphalt/85 flex flex-col z-10 overflow-y-auto safe-pad-t safe-pad-b safe-pad-l safe-pad-r"
                 id="title-screen-overlay"
               >
-                <div className="w-full max-w-3xl mx-auto flex flex-col h-full px-3 py-2 sm:px-6 sm:py-3">
-
-                  {/* Audio toggle and driver name (moved out of the removed nav bar) */}
-                  <div className="w-full flex items-center justify-between gap-2 shrink-0">
+                {/* Top row: sound + fullscreen on the left, player name on the right */}
+                <div className="w-full flex items-start justify-between gap-2 shrink-0">
                     <div className="flex items-center gap-2">
                       <button
                         className="arcade-button w-12 h-12 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
@@ -3709,10 +3707,10 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* Two columns: branding on the left, actions on the right */}
-                  <div className="flex-1 min-h-0 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+                  {/* Bottom row: title + best distance on the left, actions on the right */}
+                  <div className="mt-auto w-full flex items-end justify-between gap-4 sm:gap-8">
 
-                    <div className="flex flex-col items-center sm:items-start text-center sm:text-left gap-2 flex-1 min-w-0">
+                    <div className="flex flex-col items-start text-left gap-1.5 sm:gap-2 min-w-0">
                       <div className="inline-block px-3 py-1 rounded-ui bg-steel border border-edge text-muted text-xs font-semibold">
                         3D highway traffic racer
                       </div>
@@ -3728,7 +3726,7 @@ export default function App() {
                       )}
                     </div>
 
-                    <div className="w-full sm:w-60 shrink-0 flex flex-col gap-3">
+                    <div className="w-[45%] sm:w-[24rem] max-w-[24rem] shrink-0 flex flex-col gap-2 sm:gap-3">
                       <button
                         onClick={startGame}
                         className="arcade-button w-full min-h-14 px-6 py-4 bg-primary text-asphalt font-bold text-lg font-display cursor-pointer flex items-center justify-center gap-2 active:scale-95 transition-transform"
@@ -3753,11 +3751,9 @@ export default function App() {
                         </button>
                       </div>
                     </div>
-
                   </div>
 
                   <DebugLabel portrait={isPortrait} />
-                </div>
               </div>
             )}
 
