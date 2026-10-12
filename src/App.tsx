@@ -671,7 +671,7 @@ function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: bo
 
       {/* Visual bottom acceleration status */}
       <div className="flex items-center gap-1.5 mt-0.5">
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-ui border ${
+        <span className={`text-[0.625rem] font-semibold px-2 py-0.5 rounded-ui border ${
           isBoosting 
             ? 'bg-primary border-primary text-asphalt' 
             : currentKmh > 180 
@@ -759,7 +759,7 @@ function DebugLabel({ portrait }: { portrait: boolean }) {
 
   return (
     <div
-      className="absolute bottom-1 left-1 text-[10px] leading-tight text-muted font-body select-none pointer-events-none"
+      className="absolute bottom-1 left-1 text-[0.625rem] leading-tight text-muted font-body select-none pointer-events-none"
       id="debug-label"
     >
       v2.6 | {window.innerWidth}x{window.innerHeight} | portrait={String(portrait)} | angle={angle}
@@ -3444,7 +3444,7 @@ export default function App() {
                     {paused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
                   </button>
                   <div className={`arcade-panel px-3 py-1.5 flex flex-col justify-center ${score % 100 < 15 && score > 20 ? 'animate-hud-vibrate-subtle' : ''}`}>
-                    <div className="text-[10px] text-muted font-semibold flex items-center gap-1">
+                    <div className="text-[0.625rem] text-muted font-semibold flex items-center gap-1">
                       <Compass className="w-3 h-3 text-secondary" /> Distance
                     </div>
                     <div className="hud-number text-xl sm:text-2xl font-bold text-text leading-none mt-0.5">
@@ -3481,7 +3481,7 @@ export default function App() {
                   >
                     {/* Header Score Display */}
                     <div className="flex items-center justify-between w-full gap-3 pb-1 border-b border-edge mb-1">
-                      <div className="text-[10px] text-muted font-semibold flex items-center gap-1">
+                      <div className="text-[0.625rem] text-muted font-semibold flex items-center gap-1">
                         <Trophy className="w-3 h-3 text-primary" /> Score
                       </div>
                       <div className="hud-number text-sm sm:text-base font-bold text-text leading-none font-display">
@@ -3704,7 +3704,7 @@ export default function App() {
                         title="Edit driver name"
                       >
                         <span>{username}</span>
-                        <span className="text-[10px] opacity-60 font-normal">(edit)</span>
+                        <span className="text-[0.625rem] opacity-60 font-normal">(edit)</span>
                       </div>
                     )}
                   </div>
@@ -3830,7 +3830,7 @@ export default function App() {
                   <ArrowLeft className="w-6 h-6 text-secondary" />
                   <div className="text-left hidden sm:flex flex-col">
                     <span className="text-xs font-bold font-display">Left</span>
-                    <span className="text-[10px] text-muted">A / ←</span>
+                    <span className="text-[0.625rem] text-muted">A / ←</span>
                   </div>
                 </button>
 
@@ -3862,7 +3862,7 @@ export default function App() {
                     <span className="text-xs sm:text-sm font-bold font-display">
                       {isBoosting ? 'Boosting' : 'Nitro'}
                     </span>
-                    <span className="text-[10px] text-muted">
+                    <span className="text-[0.625rem] text-muted">
                       Hold W / ↑ ({boostFuel}%)
                     </span>
                   </div>
@@ -3877,7 +3877,7 @@ export default function App() {
                 >
                   <div className="text-right hidden sm:flex flex-col">
                     <span className="text-xs font-bold font-display">Right</span>
-                    <span className="text-[10px] text-muted">D / →</span>
+                    <span className="text-[0.625rem] text-muted">D / →</span>
                   </div>
                   <ArrowRight className="w-6 h-6 text-secondary" />
                 </button>
@@ -3983,7 +3983,7 @@ export default function App() {
 
               {/* Corner metadata badges */}
 
-              <div className="absolute bottom-2 left-2 text-[10px] text-muted flex items-center gap-2">
+              <div className="absolute bottom-2 left-2 text-[0.625rem] text-muted flex items-center gap-2">
                 <span>ID: {activeVehicle.id}</span>
                 <span className="text-edge">•</span>
                 <span>Class: {activeVehicle.role}</span>
@@ -4065,7 +4065,7 @@ export default function App() {
               <span className="text-xs text-muted font-semibold flex items-center gap-1">
                 <Car className="w-3 h-3" /> Select car
               </span>
-              <span className="text-[10px] text-muted">Tap to equip</span>
+              <span className="text-[0.625rem] text-muted">Tap to equip</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {VEHICLES.map((vehicle) => {
@@ -4084,13 +4084,13 @@ export default function App() {
                     <div className="flex justify-between items-center w-full">
                       <span className="text-xs font-bold font-display text-text">{vehicle.name}</span>
                       {isActive && (
-                        <span className="text-[10px] bg-primary text-asphalt px-1.5 py-0.5 rounded-ui font-semibold">
+                        <span className="text-[0.625rem] bg-primary text-asphalt px-1.5 py-0.5 rounded-ui font-semibold">
                           Active
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] text-muted mt-0.5">{vehicle.role}</span>
-                    <div className="flex justify-between text-[10px] text-muted mt-1 pt-1 border-t border-edge">
+                    <span className="text-[0.625rem] text-muted mt-0.5">{vehicle.role}</span>
+                    <div className="flex justify-between text-[0.625rem] text-muted mt-1 pt-1 border-t border-edge">
                       <span>Top: {vehicle.topSpeedLabel}</span>
                       <span>Handling: {vehicle.handlingLabel}</span>
                     </div>
@@ -4181,7 +4181,7 @@ export default function App() {
                 <p className="text-muted leading-relaxed">
                   Pick from 4 cars in the <strong className="text-text">Garage</strong>:
                 </p>
-                <div className="grid grid-cols-2 gap-2 mt-2 text-[11px]">
+                <div className="grid grid-cols-2 gap-2 mt-2 text-[0.6875rem]">
                   <div className="p-2 bg-asphalt rounded-ui border border-edge">
                     <strong className="text-text">VX-Titan:</strong> <span className="text-muted">Heavy armour, high stability</span>
                   </div>

@@ -1,22 +1,32 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
 
+/* ---------- STEP 2.9: SINGLE UI SCALE UNIT ----------
+   The whole interface is sized in rem, so setting the root font size scales the
+   menu, garage, HUD, buttons and controls together. Phone heights land on the
+   16px floor (unchanged); 768 / 1080 / 2160 grow to ~23 / ~30 / ~52px.
+   The vh line is a fallback for browsers without dvh support. */
+html {
+  font-size: clamp(16px, calc(7.4px + 2.1vh), 56px);
+  font-size: var(--ui-root-size);
+}
+
 @keyframes hud-jitter-subtle {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  20% { transform: translate(-1px, 0.5px) scale(1.015); }
-  40% { transform: translate(1px, -0.5px) scale(1.02); }
-  60% { transform: translate(-0.5px, -1px) scale(1.015); }
-  80% { transform: translate(1px, 0.5px) scale(1.02); }
+  20% { transform: translate(-0.0625rem, 0.03125rem) scale(1.015); }
+  40% { transform: translate(0.0625rem, -0.03125rem) scale(1.02); }
+  60% { transform: translate(-0.03125rem, -0.0625rem) scale(1.015); }
+  80% { transform: translate(0.0625rem, 0.03125rem) scale(1.02); }
 }
 
 @keyframes hud-jitter-intense {
   0%, 100% { transform: translate(0, 0) scale(1.03); }
-  15% { transform: translate(-2px, 1px) scale(1.05); }
-  30% { transform: translate(2px, -1px) scale(1.04); }
-  45% { transform: translate(-1.5px, -1.5px) scale(1.05); }
-  60% { transform: translate(1.5px, 1.5px) scale(1.04); }
-  75% { transform: translate(-1px, 1px) scale(1.05); }
-  90% { transform: translate(1px, -1px) scale(1.04); }
+  15% { transform: translate(-0.125rem, 0.0625rem) scale(1.05); }
+  30% { transform: translate(0.125rem, -0.0625rem) scale(1.04); }
+  45% { transform: translate(-0.09375rem, -0.09375rem) scale(1.05); }
+  60% { transform: translate(0.09375rem, 0.09375rem) scale(1.04); }
+  75% { transform: translate(-0.0625rem, 0.0625rem) scale(1.05); }
+  90% { transform: translate(0.0625rem, -0.0625rem) scale(1.04); }
 }
 
 @keyframes nitro-flame-pulse {
@@ -79,8 +89,8 @@ canvas {
 }
 
 @keyframes countdown-pop {
-  0% { transform: scale(1.65); opacity: 0; filter: blur(4px); }
-  25% { transform: scale(1.05); opacity: 1; filter: blur(0px); }
+  0% { transform: scale(1.65); opacity: 0; filter: blur(0.25rem); }
+  25% { transform: scale(1.05); opacity: 1; filter: blur(0rem); }
   75% { transform: scale(1); opacity: 1; }
   100% { transform: scale(0.95); opacity: 0.85; }
 }
@@ -98,18 +108,19 @@ canvas {
   animation: light-beacon-glow 0.6s infinite ease-in-out;
 }
 
-/* Frame-based HUD entrance slide-in animations when gameState changes to playing */
+/* Frame-based HUD entrance slide-in animations when gameState changes to playing
+   (Step 2.9: offsets in rem so the entrance scales with the UI) */
 @keyframes hud-slide-in-left {
   0% {
     opacity: 0;
-    transform: translate3d(-38px, 0, 0);
+    transform: translate3d(-2.375rem, 0, 0);
   }
   65% {
     opacity: 0.95;
-    transform: translate3d(3px, 0, 0);
+    transform: translate3d(0.1875rem, 0, 0);
   }
   85% {
-    transform: translate3d(-1px, 0, 0);
+    transform: translate3d(-0.0625rem, 0, 0);
   }
   100% {
     opacity: 1;
@@ -120,14 +131,14 @@ canvas {
 @keyframes hud-slide-in-right {
   0% {
     opacity: 0;
-    transform: translate3d(38px, 0, 0);
+    transform: translate3d(2.375rem, 0, 0);
   }
   65% {
     opacity: 0.95;
-    transform: translate3d(-3px, 0, 0);
+    transform: translate3d(-0.1875rem, 0, 0);
   }
   85% {
-    transform: translate3d(1px, 0, 0);
+    transform: translate3d(0.0625rem, 0, 0);
   }
   100% {
     opacity: 1;
@@ -138,11 +149,11 @@ canvas {
 @keyframes hud-slide-in-top {
   0% {
     opacity: 0;
-    transform: translate3d(0, -24px, 0);
+    transform: translate3d(0, -1.5rem, 0);
   }
   70% {
     opacity: 0.95;
-    transform: translate3d(0, 2px, 0);
+    transform: translate3d(0, 0.125rem, 0);
   }
   100% {
     opacity: 1;
@@ -153,11 +164,11 @@ canvas {
 @keyframes hud-slide-in-bottom {
   0% {
     opacity: 0;
-    transform: translate3d(0, 36px, 0);
+    transform: translate3d(0, 2.25rem, 0);
   }
   70% {
     opacity: 0.95;
-    transform: translate3d(0, -2px, 0);
+    transform: translate3d(0, -0.125rem, 0);
   }
   100% {
     opacity: 1;
@@ -294,8 +305,8 @@ canvas {
 #radial-speed-gauge-container {
   transform: scale(0.78);
   transform-origin: top center;
-  height: 94px;
-  margin-bottom: -24px;
+  height: 5.875rem;
+  margin-bottom: -1.5rem;
 }
 
 #radial-speed-gauge-container svg * {

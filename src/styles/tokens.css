@@ -17,16 +17,21 @@
   --color-sand: #d8be89;
   --font-display: "Rajdhani", sans-serif;
   --font-body: "Barlow", sans-serif;
-  --spacing-1: 4px;
-  --spacing-2: 8px;
-  --spacing-3: 12px;
-  --spacing-4: 16px;
-  --spacing-6: 24px;
+  /* Step 2.9: spacing scale in rem so every Tailwind gap/padding grows with the UI. */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
   --radius-ui: 6px;
 }
 
 :root {
-  --button-min-height: 48px;
+  /* Step 2.9: THE single UI scale unit. Everything sized in rem follows it.
+     16px on a 412px-tall phone, ~23px at 768, ~30px at 1080, ~52px at 2160.
+     Tune the whole app from this one line. */
+  --ui-root-size: clamp(16px, calc(7.4px + 2.1dvh), 56px);
+  --button-min-height: 3rem;
   --panel-shadow: 0 3px 0 color-mix(in srgb, var(--color-asphalt) 65%, transparent);
 }
 
