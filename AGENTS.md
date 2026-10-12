@@ -69,15 +69,37 @@ USE: arcade look - steel HUD panels, glossy flat buttons, red speed digits, dayl
 - Use only original or CC0 assets (Kenney, Quaternius). Do NOT copy art, models, sounds or UI images from other games.
 - References are for layout and feel only.
  
+## Platform support
+The whole app is LANDSCAPE-ONLY and must work on:
+- iPhone (Safari), Android phones (Chrome), iPad and Android tablets, large touch panels (1920x1080 and
+  above), and desktop (Chrome, Edge, Firefox, Safari). Latest 2 versions of each.
+- Aspect ratios from 4:3 (iPad) to 21:9 (ultrawide). The canvas fills the viewport; the camera FOV adapts to
+  the aspect ratio so the whole road is always visible; all UI scales from ONE scale unit based on viewport
+  height, with no fixed pixel layouts.
+- Respect safe-area insets on all four sides (notches in landscape).
+- Input: touch (gas and brake pedals plus steering with multi-touch, so gas and steering work at the same
+  time), keyboard (arrows / WASD, Space or S = brake), mouse for UI. Use pointer events. No hover-only UI.
+  Touch targets >= 48px (scaled up on big panels). Disable text selection, long-press menu and double-tap zoom.
+- iPhone has no Fullscreen API and no orientation lock: hide the Fullscreen button there and rely on the
+  Rotate screen. Audio must be unlocked on the first user tap (iOS). Tilt controls need DeviceOrientation
+  permission requested inside a tap.
+- Performance: auto quality. Measure frame time during the first seconds of a run; lower pixel ratio and
+  effects if below target. Pixel ratio cap 1.5 on phones, 2 on desktop, and a cap on total rendered pixels on
+  4K panels. Target 60 fps on mid-range Android, accept 30 fps on low-end devices.
+- If WebGL is unavailable, show a plain message instead of a blank screen.
+
 ## Progress log
 - [x] Step 1: Audit codebase and fill the Stack section
 - [x] Step 2: Fix start flow (visible PLAY, fixed-height screens, landscape handling)
 - [x] Step 2.5: exit and interruption handling
 - [x] Step 2.6: landscape-only app and rotation
-- [ ] Step 3: Split App.tsx into modules (no behaviour change)
-- [ ] Step 4: Design tokens and restyle all screens
-- [ ] Step 5: Core gameplay (4 lanes, brake pedal, near-miss, HUD)
-- [ ] Step 6: Maps and scenery
-- [ ] Step 7: Garage, upgrades, save system, rename BMW E34 to a generic name
-- [ ] Step 8: Settings, revive flow, remove unused deps (@google/genai, express, dotenv), performance pass
-- Step 3 (new look restyle): 3a done, 3b done. Not finished: 3c mostly done (all screens token-restyled, help text still long), 3d red km/h fixed but no camera-button slot yet, 3e zones are daylight but car/traffic/nitro colours are still neon (constants only).
+- [x] Step 2.7: cross-device audit
+- [ ] Step 2.8: cross-device fixes (from the audit)
+- [ ] Step 3A: real car models (Kenney Car Kit, CC0)
+- [ ] Step 3B: design redesign of Menu/Garage/HUD to match the reference (so far: 3a+3b done - tokens + daylight
+  palette; left over: 3c help text still long, 3d no camera-button slot, 3e car/traffic/nitro colours still neon)
+- [ ] Step 4: split App.tsx into modules
+- [ ] Step 5: core gameplay
+- [ ] Step 6: maps and scenery
+- [ ] Step 7: garage, upgrades, save
+- [ ] Step 8: settings, revive, cleanup, performance
