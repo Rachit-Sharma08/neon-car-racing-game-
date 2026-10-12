@@ -3885,7 +3885,7 @@ export default function App() {
 
       {/* --- GARAGE OVERLAY (temporary car picker; real Garage arrives in Step 7) --- */}
       {garageOpen && (
-        <div className="absolute inset-0 z-40 bg-asphalt flex flex-col safe-pad-t safe-pad-b safe-pad-l safe-pad-r" id="garage-overlay">
+        <div className="absolute inset-0 z-40 h-dvh bg-asphalt flex flex-col safe-pad-t safe-pad-b safe-pad-l safe-pad-r" id="garage-overlay">
           <div className="flex items-center justify-between py-2 px-3 sm:px-4 border-b border-edge shrink-0">
             <h2 className="text-lg font-bold font-display text-text">Garage</h2>
             <button
@@ -3896,21 +3896,21 @@ export default function App() {
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4">
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
+          <div className="flex-1 min-h-0 p-3 sm:p-4">
+          <div className="flex-1 min-h-0 flex flex-col sm:flex-row gap-3 sm:gap-4">
 
-          {/* Left column: the vehicle that is currently equipped */}
-          <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-3 border-b border-edge pb-2">
+          {/* Left column: large preview stage that fills the available height */}
+          <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex items-center justify-between mb-2 border-b border-edge pb-2 shrink-0">
             <div className="flex items-center gap-2">
               <Cpu className="w-4 h-4 text-primary" />
               <h3 className="text-xs font-bold text-primary">Active vehicle</h3>
             </div>
           </div>
 
-          {/* Vehicle Silhouette Preview */}
-          <div className="mb-4">
-            <div className="aspect-video max-h-[20vh] bg-steel-light border border-edge rounded-ui flex flex-col items-center justify-center p-3 relative overflow-hidden">
+          {/* Vehicle Silhouette Preview - centred inside the stage */}
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <div className="h-full max-h-full aspect-video max-w-full bg-steel-light border border-edge rounded-ui flex flex-col items-center justify-center p-3 relative overflow-hidden">
               {/* Procedural SVG Silhouette tailored to the active vehicle */}
               <div className="relative z-10 w-full flex items-center justify-center py-2">
                 <svg viewBox="0 0 260 90" className="w-48 h-auto overflow-visible">
@@ -3986,8 +3986,14 @@ export default function App() {
               </div>
             </div>
 
+            </div>
+          </div>
+
+          {/* Right column: car name, stats and the car list */}
+          <div className="w-full sm:w-[26rem] shrink-0 flex flex-col gap-3 min-h-0 overflow-y-auto">
+
             {/* Vehicle Meta Headers */}
-            <div className="flex justify-between items-end mt-4">
+            <div className="flex justify-between items-end shrink-0">
               <div>
                 <h4 className="text-lg font-bold font-display text-text">{activeVehicle.name}</h4>
                 <div className="text-xs text-muted mt-0.5 font-semibold">
@@ -3998,14 +4004,8 @@ export default function App() {
                 {activeVehicle.mark}
               </span>
             </div>
-            
-            </div>
-          </div>
 
-          {/* Middle column: description + specs */}
-          <div className="w-full sm:w-48 shrink-0">
-
-            <p className="text-xs text-muted mt-2.5 leading-relaxed font-body border-b border-edge pb-3 mb-3">
+            <p className="text-xs text-muted leading-relaxed font-body border-b border-edge pb-3">
               {activeVehicle.description}
             </p>
 
@@ -4050,13 +4050,9 @@ export default function App() {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Right column: the car list */}
-          <div className="w-full sm:w-80 shrink-0 flex flex-col">
 
           {/* Vehicle Selection List */}
-          <div className="mt-auto border-t border-edge pt-3">
+          <div className="border-t border-edge pt-3 shrink-0">
             <div className="flex justify-between items-center mb-1.5">
               <span className="text-xs text-muted font-semibold flex items-center gap-1">
                 <Car className="w-3 h-3" /> Select car
