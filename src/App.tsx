@@ -33,6 +33,8 @@ import { VEHICLES } from './game/vehicles';
 import type { Vehicle } from './game/vehicles';
 import { useIsPortrait, verticalFovForAspect, getPixelRatio } from './game/viewport';
 import { DebugLabel } from './ui/DebugLabel';
+import { Hud } from './ui/Hud';
+import { Controls } from './ui/Controls';
 
 export default function App() {
   /* ---------- REACT STATE ---------- */
@@ -2805,78 +2807,16 @@ export default function App() {
             {/* Real WebGL Canvas Render Element */}
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" id="gameCanvas" />
 
-            {/* --- IN-GAME OVERLAY STATS / HUD --- */}
-            <div className={`absolute inset-x-0 top-0 p-3 sm:p-5 pointer-events-none flex flex-col gap-3 font-body transition-all duration-300 safe-pad-l safe-pad-r ${gameState === 'playing' ? 'opacity-100' : 'opacity-0'}`}>
-              
-              {/* Top Row: Distance & Pause, Center Nitro Status, Right: Speed & Score */}
-              <div className="flex justify-between items-start w-full">
-                {/* Distance & Pause */}
-                <div 
-                  key={gameState === 'playing' ? 'hud-score-active' : 'hud-score-idle'}
-                  className={`flex items-center gap-2 sm:gap-3 pointer-events-auto ${gameState === 'playing' ? 'animate-hud-slide-left' : ''}`} 
-                  id="hud-score-display"
-                >
-                  <button 
-                    onClick={() => setPaused(!paused)}
-                    className="arcade-button w-12 h-12 sm:w-12 sm:h-12 bg-steel border-edge text-text transition-all flex items-center justify-center cursor-pointer active:scale-95"
-                    title={paused ? "Resume Drive (P)" : "Pause Drive (P)"}
-                    id="hud-pause-btn"
-                  >
-                    {paused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
-                  </button>
-                  <div className={`arcade-panel px-3 py-1.5 flex flex-col justify-center ${score % 100 < 15 && score > 20 ? 'animate-hud-vibrate-subtle' : ''}`}>
-                    <div className="text-[0.625rem] text-muted font-semibold flex items-center gap-1">
-                      <Compass className="w-3 h-3 text-secondary" /> Distance
-                    </div>
-                    <div className="hud-number text-xl sm:text-2xl font-bold text-text leading-none mt-0.5">
-                      {score} <span className="text-xs font-bold text-muted">m</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Center: Live Nitro Status / Overdrive indicator */}
-                <div 
-                  key={gameState === 'playing' ? 'hud-nitro-active' : 'hud-nitro-idle'}
-                  className={`hidden sm:flex flex-col items-center ${gameState === 'playing' ? 'animate-hud-slide-top' : ''}`}
-                >
-                  <div className={`arcade-panel px-3 py-1.5 text-xs font-semibold transition-all flex items-center gap-2 ${
-                    isBoosting 
-                      ? 'bg-primary border-primary text-asphalt'
-                      : boostFuel > 20
-                        ? 'text-secondary'
-                        : 'text-muted'
-                  }`}>
-                    <Flame className={`w-4 h-4 ${isBoosting ? 'text-asphalt' : 'text-primary'}`} />
-                    <span>{isBoosting ? 'Nitro active (+80% score)' : `Nitro fuel: ${boostFuel}% (hold Shift)`}</span>
-                  </div>
-                </div>
-
-                {/* Right: Speed & Score with subtle vibrating / pulsing animations */}
-                <div 
-                  key={gameState === 'playing' ? 'hud-speed-active' : 'hud-speed-idle'}
-                  className={`${gameState === 'playing' ? 'animate-hud-slide-right' : ''}`}
-                >
-                  <div 
-                    className={`arcade-panel flex flex-col items-end px-3 sm:px-4 py-2 pointer-events-auto ${Math.round(speed * 6.5) > 180 ? 'animate-hud-vibrate-subtle' : ''}`} 
-                    id="hud-speed-display"
-                  >
-                    {/* Header Score Display */}
-                    <div className="flex items-center justify-between w-full gap-3 pb-1 border-b border-edge mb-1">
-                      <div className="text-[0.625rem] text-muted font-semibold flex items-center gap-1">
-                        <Trophy className="w-3 h-3 text-primary" /> Score
-                      </div>
-                      <div className="hud-number text-sm sm:text-base font-bold text-text leading-none font-display">
-                        {Math.round(score * 12.5).toLocaleString()}
-                      </div>
-                    </div>
-
-                    <div className="hud-number text-2xl sm:text-3xl font-bold text-speed font-display leading-none">
-                      {Math.round(speed * 6.5)} <span className="text-xs font-body text-muted">km/h</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* --- IN-GAME OVERLAY STATS / HUD (src/ui/Hud.tsx) --- */}
+            <Hud
+              gameState={gameState}
+              score={score}
+              speed={speed}
+              paused={paused}
+              boostFuel={boostFuel}
+              isBoosting={isBoosting}
+              onTogglePause={() => setPaused(!paused)}
+            />
 
             {/* --- OVERLAY: STARTING RACE COUNTDOWN ANIMATION --- */}
             {gameState === 'countdown' && !paused && (
@@ -3205,118 +3145,22 @@ export default function App() {
               </div>
             )}
 
-            {/* --- ON-SCREEN CONTROLS: STEER (left) + NITRO (centre) + PEDALS (right) --- */}
-            {gameState === 'playing' && (
-              <div 
-                key="on-screen-steering-controls"
-                className="on-screen-controls absolute inset-x-0 bottom-3 sm:bottom-6 px-3 sm:px-8 flex justify-between items-center pointer-events-none z-10 select-none animate-hud-slide-bottom safe-pad-l safe-pad-r" 
-                id="on-screen-steering"
-              >
-                
-                {/* Bottom-left: Left/Right steering arrows (independent pointers) */}
-                <div className="flex items-center gap-2 pointer-events-auto">
-                <button 
-                  className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
-                  onClick={() => gameLoopRef.current?.changeLaneLeft()}
-                  title="Steer left (A or â†)"
-                  id="ctrl-steer-left"
-                >
-                  <ArrowLeft className="w-6 h-6 text-secondary" />
-                  <div className="text-left hidden sm:flex flex-col">
-                    <span className="text-xs font-bold font-display">Left</span>
-                    <span className="text-[0.625rem] text-muted">A / â†</span>
-                  </div>
-                </button>
-                <button 
-                  className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
-                  onClick={() => gameLoopRef.current?.changeLaneRight()}
-                  title="Steer right (D or â†’)"
-                  id="ctrl-steer-right"
-                >
-                  <div className="text-right hidden sm:flex flex-col">
-                    <span className="text-xs font-bold font-display">Right</span>
-                    <span className="text-[0.625rem] text-muted">D / â†’</span>
-                  </div>
-                  <ArrowRight className="w-6 h-6 text-secondary" />
-                </button>
-                </div>
-
-                {/* Nitro Boost Button */}
-                <button
-                  className={`arcade-button pointer-events-auto relative overflow-hidden h-14 sm:h-16 px-5 sm:px-10 rounded-ui flex items-center gap-2 sm:gap-3 cursor-pointer select-none active:scale-95 ${
-                    isBoosting
-                      ? 'bg-primary border-primary text-asphalt'
-                      : boostFuel > 15
-                        ? 'bg-steel border-edge text-text'
-                        : 'bg-steel border-edge text-muted'
-                  }`}
-                  onPointerDown={() => gameLoopRef.current?.setBoost(true)}
-                  onPointerUp={() => gameLoopRef.current?.setBoost(false)}
-                  onPointerLeave={() => gameLoopRef.current?.setBoost(false)}
-                  onPointerCancel={() => gameLoopRef.current?.setBoost(false)}
-                  onTouchStart={(e) => { e.preventDefault(); gameLoopRef.current?.setBoost(true); }}
-                  onTouchEnd={(e) => { e.preventDefault(); gameLoopRef.current?.setBoost(false); }}
-                  title="Hold for nitro speed boost (Shift)"
-                  id="ctrl-nitro-boost"
-                >
-                  {/* Fuel gauge fill inside button */}
-                  <div 
-                    className="absolute inset-y-0 left-0 bg-secondary/40 pointer-events-none transition-all duration-150"
-                    style={{ width: `${boostFuel}%` }}
-                  ></div>
-
-                  <Flame className={`w-6 h-6 sm:w-7 sm:h-7 relative z-10 ${isBoosting ? 'text-asphalt' : 'text-primary'}`} />
-                  <div className="text-left relative z-10 flex flex-col">
-                    <span className="text-xs sm:text-sm font-bold font-display">
-                      {isBoosting ? 'Boosting' : 'Nitro'}
-                    </span>
-                    <span className="text-[0.625rem] text-muted">
-                      Hold Shift ({boostFuel}%)
-                    </span>
-                  </div>
-                </button>
-
-                {/* Bottom-right: Brake + Gas pedals (independent pointers, multi-touch safe) */}
-                <div className="flex items-center gap-2 pointer-events-auto">
-                <button
-                  className={`arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui border-edge flex items-center gap-2 cursor-pointer select-none active:scale-95 ${
-                    brakeHeld ? 'bg-danger border-danger text-asphalt' : 'bg-steel text-text'
-                  }`}
-                  onPointerDown={(e) => { e.preventDefault(); setBrake(true); }}
-                  onPointerUp={() => setBrake(false)}
-                  onPointerLeave={() => setBrake(false)}
-                  onPointerCancel={() => setBrake(false)}
-                  onTouchStart={(e) => { e.preventDefault(); setBrake(true); }}
-                  onTouchEnd={(e) => { e.preventDefault(); setBrake(false); }}
-                  title="Brake (S or Space)"
-                  id="ctrl-brake-pedal"
-                >
-                  <div className="text-left flex flex-col">
-                    <span className="text-xs font-bold font-display">Brake</span>
-                    <span className="text-[0.625rem] opacity-70">S / Space</span>
-                  </div>
-                </button>
-                <button
-                  className={`arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui border-edge flex items-center gap-2 cursor-pointer select-none active:scale-95 ${
-                    gasHeld ? 'bg-go border-go text-asphalt' : 'bg-steel text-text'
-                  }`}
-                  onPointerDown={(e) => { e.preventDefault(); setGas(true); }}
-                  onPointerUp={() => setGas(false)}
-                  onPointerLeave={() => setGas(false)}
-                  onPointerCancel={() => setGas(false)}
-                  onTouchStart={(e) => { e.preventDefault(); setGas(true); }}
-                  onTouchEnd={(e) => { e.preventDefault(); setGas(false); }}
-                  title="Gas (W or â†‘)"
-                  id="ctrl-gas-pedal"
-                >
-                  <div className="text-left flex flex-col">
-                    <span className="text-xs font-bold font-display">Gas</span>
-                    <span className="text-[0.625rem] opacity-70">W / â†‘</span>
-                  </div>
-                </button>
-                </div>
-              </div>
-            )}
+            {/* --- ON-SCREEN CONTROLS: steer / nitro / pedals (src/ui/Controls.tsx) --- */}
+            <Controls
+              gameState={gameState}
+              boostFuel={boostFuel}
+              isBoosting={isBoosting}
+              gasHeld={gasHeld}
+              brakeHeld={brakeHeld}
+              onSteer={(direction) =>
+                direction < 0
+                  ? gameLoopRef.current?.changeLaneLeft()
+                  : gameLoopRef.current?.changeLaneRight()
+              }
+              onBoost={(held) => gameLoopRef.current?.setBoost(held)}
+              onGas={setGas}
+              onBrake={setBrake}
+            />
 
           </div>
         </section>
