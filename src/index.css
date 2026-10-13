@@ -203,19 +203,6 @@ canvas {
   font-family: var(--font-body) !important;
 }
 
-#root-container .font-orbitron,
-#root-container .font-mono,
-#root-container .font-rajdhani {
-  font-family: var(--font-display) !important;
-  letter-spacing: normal !important;
-}
-
-#root-container .bg-gradient-to-r {
-  background-image: none !important;
-  background-color: var(--color-primary) !important;
-  color: var(--color-asphalt) !important;
-}
-
 #title-screen-overlay,
 #gameover-screen-overlay,
 #rotate-overlay,
@@ -237,8 +224,7 @@ canvas {
 #gameover-screen-overlay > div,
 #paused-screen-overlay > div,
 #garage-overlay > div,
-#rotate-overlay,
-#starting-countdown-overlay > div {
+#rotate-overlay {
   font-family: var(--font-body);
 }
 
@@ -297,36 +283,8 @@ canvas {
 }
 
 #hud-score-display .text-xl,
-#hud-speed-display .text-sm,
-#radial-speed-gauge-container text {
+#hud-speed-display .text-sm {
   font-variant-numeric: tabular-nums;
-}
-
-#radial-speed-gauge-container {
-  transform: scale(0.78);
-  transform-origin: top center;
-  height: 5.875rem;
-  margin-bottom: -1.5rem;
-}
-
-#radial-speed-gauge-container svg * {
-  filter: none !important;
-}
-
-#radial-speed-gauge-container text {
-  fill: var(--color-speed) !important;
-  font-family: var(--font-display) !important;
-}
-
-#radial-speed-gauge-container circle,
-#radial-speed-gauge-container line,
-#radial-speed-gauge-container path {
-  stroke: var(--color-edge) !important;
-}
-
-#radial-speed-gauge-container circle[fill],
-#radial-speed-gauge-container text[font-size="17"] {
-  fill: var(--color-speed) !important;
 }
 
 #garage-overlay .bg-gradient-to-r,
@@ -352,15 +310,9 @@ canvas {
   color: var(--color-primary) !important;
 }
 
-#garage-overlay [class*="text-\[\#00f0ff\]"],
-#garage-overlay [class*="bg-\[\#00f0ff\]"],
-#garage-overlay [class*="border-\[\#00f0ff\]"] {
-  color: var(--color-secondary) !important;
-  border-color: var(--color-secondary) !important;
-}
 
-#starting-countdown-overlay > div:first-child,
-#starting-countdown-overlay > div:last-child {
+
+#starting-countdown-overlay > div:first-of-type {
   background: var(--color-steel) !important;
   border-color: var(--color-edge) !important;
   box-shadow: var(--panel-shadow) !important;

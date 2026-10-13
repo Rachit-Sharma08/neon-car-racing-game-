@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { 
   Trophy, 
@@ -390,302 +390,7 @@ const VEHICLES: readonly Vehicle[] = [
     description: 'Custom stance classic with low suspension, chrome deep dish rims, and great overall control.'
   }
 ];
-
-/* ---------- CIRCULAR RADIAL SPEEDOMETER GAUGE COMPONENT ---------- */
-function SpeedRadialGauge({ speed, isBoosting }: { speed: number; isBoosting: boolean }) {
-  const currentKmh = Math.round(speed * 6.5);
-  const maxKmh = 300;
-  const speedRatio = Math.min(1, Math.max(0, currentKmh / maxKmh));
-  
-  // 240 degree sweep from 150deg (down-left) to 390deg (down-right)
-  const cx = 80;
-  const cy = 80;
-  const radius = 53;
-  const circumference = 2 * Math.PI * radius; // ~333.01
-  const sweepAngle = 240;
-  const totalArc = circumference * (sweepAngle / 360); // ~222.01
-  const filledArc = speedRatio * totalArc;
-  
-  // Needle / tip angle
-  const needleAngle = 150 + speedRatio * sweepAngle;
-  const needleRad = (needleAngle * Math.PI) / 180;
-  
-  // Major calibration ticks: 0, 60, 120, 180, 240, 300 KM/H
-  const ticks = [
-    { kmh: 0, label: '0' },
-    { kmh: 60, label: '60' },
-    { kmh: 120, label: '120' },
-    { kmh: 180, label: '180' },
-    { kmh: 240, label: '240' },
-    { kmh: 300, label: '300' },
-  ];
-  
-  // Minor ticks at intervals between major graduations
-  const minorTicks = [30, 90, 150, 210, 270];
-
-  return (
-    <div className="relative flex flex-col items-center select-none" id="radial-speed-gauge-container">
-      <svg 
-        viewBox="0 0 160 160" 
-        className="w-28 h-28 sm:w-34 sm:h-34 overflow-visible"
-        aria-label={`Current speed: ${currentKmh} KM/H of ${maxKmh} KM/H`}
-      >
-        <defs>
-          <linearGradient id="radialSpeedGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" style={{ stopColor: 'var(--color-secondary)' }} />
-            <stop offset="45%" style={{ stopColor: 'var(--color-secondary)' }} />
-            <stop offset="70%" style={{ stopColor: 'var(--color-primary)' }} />
-            <stop offset="88%" style={{ stopColor: 'var(--color-danger)' }} />
-            <stop offset="100%" style={{ stopColor: 'var(--color-speed)' }} />
-          </linearGradient>
-
-          <linearGradient id="boostGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{ stopColor: 'var(--color-primary)' }} />
-            <stop offset="50%" style={{ stopColor: 'var(--color-primary)' }} />
-            <stop offset="100%" style={{ stopColor: 'var(--color-speed)' }} />
-          </linearGradient>
-        </defs>
-
-        {/* Outer subtle frame ring */}
-        <circle 
-          cx={cx} 
-          cy={cy} 
-          r="73" 
-          fill="none" 
-          className="stroke-edge" 
-          strokeWidth="1" 
-          strokeDasharray="4 6" 
-        />
-
-        {/* Redline Warning Sector Arc (220 to 300 KM/H) */}
-        {(() => {
-          const redlineStartAngle = 150 + (220 / maxKmh) * sweepAngle;
-          const redlineRad = (redlineStartAngle * Math.PI) / 180;
-          const redlineEndRad = ((150 + sweepAngle) * Math.PI) / 180;
-          const rOuter = 65;
-          const x1 = cx + rOuter * Math.cos(redlineRad);
-          const y1 = cy + rOuter * Math.sin(redlineRad);
-          const x2 = cx + rOuter * Math.cos(redlineEndRad);
-          const y2 = cy + rOuter * Math.sin(redlineEndRad);
-          return (
-            <path
-              d={`M ${x1} ${y1} A ${rOuter} ${rOuter} 0 0 1 ${x2} ${y2}`}
-              fill="none"
-              stroke={isBoosting ? 'var(--color-primary)' : 'var(--color-danger)'}
-              strokeWidth="2.5"
-              strokeDasharray="3 3"
-              className={currentKmh > 220 ? 'animate-pulse' : ''}
-            />
-          );
-        })()}
-
-        {/* Major Ticks and Calibration Labels */}
-        {ticks.map(t => {
-          const angle = 150 + (t.kmh / maxKmh) * sweepAngle;
-          const rad = (angle * Math.PI) / 180;
-          const isPassed = currentKmh >= t.kmh;
-          const x1 = cx + 60 * Math.cos(rad);
-          const y1 = cy + 60 * Math.sin(rad);
-          const x2 = cx + 66 * Math.cos(rad);
-          const y2 = cy + 66 * Math.sin(rad);
-          
-          // Numerical label position outside ticks
-          const xt = cx + 74 * Math.cos(rad);
-          const yt = cy + 74 * Math.sin(rad) + 2.5;
-
-          const isRedline = t.kmh >= 240;
-          const tickColor = isPassed
-            ? (isBoosting ? 'var(--color-primary)' : isRedline ? 'var(--color-danger)' : t.kmh > 150 ? 'var(--color-primary)' : 'var(--color-secondary)')
-            : 'var(--color-edge)';
-
-          return (
-            <g key={t.kmh}>
-              <line 
-                x1={x1} 
-                y1={y1} 
-                x2={x2} 
-                y2={y2} 
-                stroke={tickColor} 
-                strokeWidth={isPassed ? 2 : 1.2} 
-                strokeLinecap="round" 
-              />
-              <text 
-                x={xt} 
-                y={yt} 
-                textAnchor="middle" 
-                fontSize="6" 
-                fontFamily="var(--font-display), sans-serif" 
-                fill={isPassed ? (isRedline ? 'var(--color-danger)' : 'var(--color-secondary)') : 'var(--color-muted)'} 
-                fontWeight={isPassed ? 'bold' : 'normal'}
-              >
-                {t.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Minor Intermediate Ticks */}
-        {minorTicks.map(m => {
-          const angle = 150 + (m / maxKmh) * sweepAngle;
-          const rad = (angle * Math.PI) / 180;
-          const isPassed = currentKmh >= m;
-          const x1 = cx + 61 * Math.cos(rad);
-          const y1 = cy + 61 * Math.sin(rad);
-          const x2 = cx + 64 * Math.cos(rad);
-          const y2 = cy + 64 * Math.sin(rad);
-          return (
-            <line 
-              key={m} 
-              x1={x1} 
-              y1={y1} 
-              x2={x2} 
-              y2={y2} 
-              stroke={isPassed ? 'var(--color-secondary)' : 'var(--color-edge)'} 
-              strokeWidth="1" 
-              strokeLinecap="round" 
-            />
-          );
-        })}
-
-        {/* Background Track Arc */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={radius}
-          fill="none"
-          stroke="var(--color-edge)"
-          strokeWidth="7"
-          strokeDasharray={`${totalArc} ${circumference}`}
-          strokeLinecap="round"
-          transform={`rotate(150 ${cx} ${cy})`}
-        />
-
-        {/* Active Speed Progress Arc */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={radius}
-          fill="none"
-          stroke={isBoosting ? "url(#boostGlowGrad)" : "url(#radialSpeedGrad)"}
-          strokeWidth="7"
-          strokeDasharray={`${filledArc} ${circumference}`}
-          strokeLinecap="round"
-          transform={`rotate(150 ${cx} ${cy})`}
-          style={{ transition: 'stroke-dasharray 0.08s ease-out' }}
-        />
-
-        {/* Head node at the current speed tip of the arc */}
-        {filledArc > 1 && (
-          <circle
-            cx={cx + radius * Math.cos(needleRad)}
-            cy={cy + radius * Math.sin(needleRad)}
-            r={isBoosting ? "4" : "3.2"}
-            className="fill-text"
-            style={{ transition: 'cx 0.08s ease-out, cy 0.08s ease-out' }}
-          />
-        )}
-
-        {/* Analog Needle Indicator */}
-        <g 
-          style={{ 
-            transform: `rotate(${needleAngle}deg)`, 
-            transformOrigin: `${cx}px ${cy}px`,
-            transition: 'transform 0.09s cubic-bezier(0.18, 0.85, 0.3, 1)' 
-          }}
-        >
-          {/* Needle stem */}
-          <line
-            x1={cx + 14}
-            y1={cy}
-            x2={cx + radius - 2}
-            y2={cy}
-            stroke={isBoosting ? 'var(--color-primary)' : 'var(--color-secondary)'}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          {/* Counterweight */}
-          <line
-            x1={cx - 10}
-            y1={cy}
-            x2={cx - 4}
-            y2={cy}
-            stroke="var(--color-edge)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-        </g>
-
-        {/* Center Digital Cockpit Hub */}
-        <circle 
-          cx={cx} 
-          cy={cy} 
-          r="36" 
-          className="fill-asphalt" 
-          stroke={isBoosting ? 'var(--color-primary)' : 'var(--color-edge)'} 
-          strokeWidth="1.5"
-        />
-
-        {/* Center Pivot Point */}
-        <circle cx={cx} cy={cy} r="4" className="fill-steel" stroke="var(--color-edge)" strokeWidth="1" />
-        <circle cx={cx} cy={cy} r="1.5" fill={isBoosting ? 'var(--color-primary)' : 'var(--color-secondary)'} />
-
-        {/* Digital Speed Number */}
-        <text
-          x={cx}
-          y={cy - 6}
-          textAnchor="middle"
-          fontSize="17"
-          fontWeight="900"
-          fontFamily="var(--font-display), sans-serif"
-          fill={isBoosting || currentKmh > 180 ? 'var(--color-speed)' : 'var(--color-text)'}
-        >
-          {currentKmh}
-        </text>
-
-        {/* KM/H Unit Subtext */}
-        <text
-          x={cx}
-          y={cy + 8}
-          textAnchor="middle"
-          fontSize="7"
-          fontWeight="bold"
-          fontFamily="var(--font-display), sans-serif"
-          fill="var(--color-muted)"
-        >
-          KM/H
-        </text>
-
-        {/* Relative Acceleration / Relative Max Speed Indicator */}
-        <text
-          x={cx}
-          y={cy + 22}
-          textAnchor="middle"
-          fontSize="6"
-          fontWeight="600"
-          fontFamily="var(--font-body), sans-serif"
-          fill={isBoosting ? 'var(--color-primary)' : 'var(--color-muted)'}
-        >
-          {isBoosting ? 'NITRO' : `${Math.round(speedRatio * 100)}% MAX`}
-        </text>
-      </svg>
-
-      {/* Visual bottom acceleration status */}
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <span className={`text-[0.625rem] font-semibold px-2 py-0.5 rounded-ui border ${
-          isBoosting 
-            ? 'bg-primary border-primary text-asphalt' 
-            : currentKmh > 180 
-              ? 'bg-danger/20 border-danger text-danger' 
-              : currentKmh > 90 
-                ? 'bg-secondary/20 border-secondary text-secondary' 
-                : 'bg-steel border-edge text-muted'
-        }`}>
-          {isBoosting ? 'Overdrive' : currentKmh > 180 ? 'High speed' : currentKmh > 90 ? 'Cruising' : 'Accelerating'}
-        </span>
-      </div>
-    </div>
-  );
-}
+/* SpeedRadialGauge removed in Step 2.9 cleanup: unused, the HUD shows digits. */
 
 /* ---------- ORIENTATION (Step 2.6: landscape-only app) ---------- */
 
@@ -3693,12 +3398,12 @@ export default function App() {
 
                 {/* Quick Reminder */}
                 <div className="mt-8 px-5 py-2.5 rounded-ui bg-asphalt border border-edge text-muted text-xs flex items-center gap-3">
-                  <span>Steer: <strong className="text-text">A / D or ← / →</strong></span>
-                  <span className="text-edge">•</span>
-                  <span>Gas: <strong className="text-text">W / ↑</strong></span>
-                  <span className="text-edge">•</span>
+                  <span>Steer: <strong className="text-text">A / D or â† / â†’</strong></span>
+                  <span className="text-edge">â€¢</span>
+                  <span>Gas: <strong className="text-text">W / â†‘</strong></span>
+                  <span className="text-edge">â€¢</span>
                   <span>Brake: <strong className="text-text">S / Space</strong></span>
-                  <span className="text-edge">•</span>
+                  <span className="text-edge">â€¢</span>
                   <span>Nitro: <strong className="text-text">Shift</strong></span>
                 </div>
               </div>
@@ -3986,24 +3691,24 @@ export default function App() {
                 <button 
                   className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
                   onClick={() => gameLoopRef.current?.changeLaneLeft()}
-                  title="Steer left (A or ←)"
+                  title="Steer left (A or â†)"
                   id="ctrl-steer-left"
                 >
                   <ArrowLeft className="w-6 h-6 text-secondary" />
                   <div className="text-left hidden sm:flex flex-col">
                     <span className="text-xs font-bold font-display">Left</span>
-                    <span className="text-[0.625rem] text-muted">A / ←</span>
+                    <span className="text-[0.625rem] text-muted">A / â†</span>
                   </div>
                 </button>
                 <button 
                   className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
                   onClick={() => gameLoopRef.current?.changeLaneRight()}
-                  title="Steer right (D or →)"
+                  title="Steer right (D or â†’)"
                   id="ctrl-steer-right"
                 >
                   <div className="text-right hidden sm:flex flex-col">
                     <span className="text-xs font-bold font-display">Right</span>
-                    <span className="text-[0.625rem] text-muted">D / →</span>
+                    <span className="text-[0.625rem] text-muted">D / â†’</span>
                   </div>
                   <ArrowRight className="w-6 h-6 text-secondary" />
                 </button>
@@ -4074,12 +3779,12 @@ export default function App() {
                   onPointerCancel={() => setGas(false)}
                   onTouchStart={(e) => { e.preventDefault(); setGas(true); }}
                   onTouchEnd={(e) => { e.preventDefault(); setGas(false); }}
-                  title="Gas (W or ↑)"
+                  title="Gas (W or â†‘)"
                   id="ctrl-gas-pedal"
                 >
                   <div className="text-left flex flex-col">
                     <span className="text-xs font-bold font-display">Gas</span>
-                    <span className="text-[0.625rem] opacity-70">W / ↑</span>
+                    <span className="text-[0.625rem] opacity-70">W / â†‘</span>
                   </div>
                 </button>
                 </div>
@@ -4187,7 +3892,7 @@ export default function App() {
 
               <div className="absolute bottom-2 left-2 text-[0.625rem] text-muted flex items-center gap-2">
                 <span>ID: {activeVehicle.id}</span>
-                <span className="text-edge">•</span>
+                <span className="text-edge">â€¢</span>
                 <span>Class: {activeVehicle.role}</span>
               </div>
             </div>
@@ -4344,11 +4049,11 @@ export default function App() {
                 <ul className="space-y-2 text-muted mt-2">
                   <li className="flex items-center justify-between text-xs">
                     <span className="text-text">Steer left / right:</span>
-                    <span className="text-secondary bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">A / D or ← / →</span>
+                    <span className="text-secondary bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">A / D or â† / â†’</span>
                   </li>
                   <li className="flex items-center justify-between text-xs">
                     <span className="text-text">Gas:</span>
-                    <span className="text-text bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">Hold W / ↑ or the Gas pedal</span>
+                    <span className="text-text bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">Hold W / â†‘ or the Gas pedal</span>
                   </li>
                   <li className="flex items-center justify-between text-xs">
                     <span className="text-text">Brake:</span>

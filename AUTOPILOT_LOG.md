@@ -42,3 +42,16 @@ Assumptions:
 - Verified: lint clean, build OK, smoke 27/27 PASS. Live evidence: menu label "pr=2.00" (budget), mid-run "pr=1.75" after a slow window — downgrade step works and stays in range. No console errors.
 - NOT verified: sustained low-end-device behaviour (upgrade path back to cap untested live); real 45/58fps boundary timing on a phone.
 - Note: headless run DID downgrade (webdriver flag false under remote-debugging port), which usefully proved the mechanism; design still can't stick low (re-upgrade + per-run reset).
+
+## S4 Step 3A real car models - SKIPPED: no models
+- Condition checked: public/models/car-kit does not exist and the repo has no public/ directory at all (assets/ holds only an empty .aistudio folder). No .glb/.gltf anywhere.
+- Per the queue rule, src/game/carModels.ts was NOT created (no GLTFLoader work without assets, and adding assets would need downloading, which autopilot cannot do reliably).
+- DESIGN HANDOFF NEEDED for Step 3A: someone must add the CC0 Kenney Car Kit .glb files under public/models/car-kit/, then the loader mapping can be implemented.
+
+## S5 Cleanup - DONE
+- git rm the five step3-*.png files from the repo root (copies still exist in qa-screenshots/, which is gitignored).
+- Removed the unused SpeedRadialGauge component (~295 lines) from src/App.tsx (App.tsx 4446 -> 4151 lines).
+- Removed dead index.css override selectors: the whole #radial-speed-gauge-container block, .text-[9px] HUD rules (no such class left), .font-orbitron/.font-mono/.font-rajdhani and #root-container .bg-gradient-to-r (no such classes in src), #garage-overlay #00f0ff escapes (no such classes), and dropped #starting-countdown-overlay > div from the font-family selector (matched no element; removed the :last-child panel rule that relied on it). CSS 32.95 kB -> 28.92 kB.
+- Removed unused deps @google/genai, express, dotenv and devDep @types/express after confirming no import in src/ or config; npm install removed 121 packages and refreshed the lockfile.
+- Kept `motion` (still a declared dep; unused in src but out of scope for this item - logged).
+- Verified: lint clean, build OK (identical JS bytes 803.99 kB, CSS 4 kB smaller), smoke 27/27 PASS, menu screenshot at 915x412 unchanged vs before the CSS deletions.
