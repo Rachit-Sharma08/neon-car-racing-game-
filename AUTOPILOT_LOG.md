@@ -34,3 +34,11 @@ Assumptions:
 - Verified: lint clean, build OK, smoke 25/25 PASS incl. live brake 125->16 km/h, toggle ON->OFF->ON, game + pause screenshots at 915x412 eyeballed (pedals fit, hints correct).
 - NOT verified: real multi-touch (needs a phone); Auto-gas OFF coast/gas-rise curve (only ON-mode tested live); tilt controls (none exist, unchanged).
 - Assumption A5: pedals always visible (also mouse-clickable), not touch-only — simpler and testable.
+
+## S3 Step 2.11 auto quality - DONE
+- Frame-time sampling with raw wall-clock deltas in the render loop, only while playing and visible. First window 3s after launchRace/resetGame, then rolling 5s windows.
+- Adjust: avg <45fps -> pixel ratio -0.25 (floor 0.75); avg >58fps -> +0.15 back (cap = Step 2.8 budget). Resize restarts from the new budget; webdriver browsers skip adjustments.
+- Current ratio mirrored to window.__neonPixelRatio and shown in the debug label (menu + rotate overlay refresh every 400ms).
+- Verified: lint clean, build OK, smoke 27/27 PASS. Live evidence: menu label "pr=2.00" (budget), mid-run "pr=1.75" after a slow window — downgrade step works and stays in range. No console errors.
+- NOT verified: sustained low-end-device behaviour (upgrade path back to cap untested live); real 45/58fps boundary timing on a phone.
+- Note: headless run DID downgrade (webdriver flag false under remote-debugging port), which usefully proved the mechanism; design still can't stick low (re-upgrade + per-run reset).

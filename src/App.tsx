@@ -756,13 +756,16 @@ function DebugLabel({ portrait }: { portrait: boolean }) {
   if (!SHOW_DEBUG) return null;
 
   const angle = typeof screen !== 'undefined' && screen.orientation ? screen.orientation.angle : 'n/a';
+  // Step 2.11: live pixel ratio set by auto quality (budget value until a run starts).
+  const pr = (window as any).__neonPixelRatio;
+  const prText = typeof pr === 'number' ? pr.toFixed(2) : '?';
 
   return (
     <div
       className="absolute bottom-1 left-1 text-[0.625rem] leading-tight text-muted font-body select-none pointer-events-none"
       id="debug-label"
     >
-      v2.6 | {window.innerWidth}x{window.innerHeight} | portrait={String(portrait)} | angle={angle}
+      v2.6 | {window.innerWidth}x{window.innerHeight} | portrait={String(portrait)} | angle={angle} | pr={prText}
     </div>
   );
 }
@@ -1183,7 +1186,33 @@ export default function App() {
       setWebglFailed(true);
       return;
     }
-    renderer.setPixelRatio(getPixelRatio(window.innerWidth, window.innerHeight));
+    /* ---------- AUTO QUALITY (Step 2.11) ----------
+       qualityCap is the Step 2.8 budget (never exceeded). autoPR starts there
+       and moves in steps: -0.25 when a window averages below ~45fps,
+       +0.15 back when above ~58fps, never below 0.75. Headless browsers
+       (webdriver) report unreliable fps, so there we measure nothing and
+       keep the budget value. The current ratio is mirrored to
+       window.__neonPixelRatio for the debug label. */
+    let qualityCap = getPixelRatio(window.innerWidth, window.innerHeight);
+    let autoPR = qualityCap;
+    let qualityFrames = 0;
+    let qualityTime = 0;
+    let qualityWindow = 3; // first window: 3s, then 5s rolling
+    let lastFrameMs = performance.now();
+    const resetQualityWindow = () => {
+      qualityFrames = 0;
+      qualityTime = 0;
+      qualityWindow = 3;
+      autoPR = qualityCap;
+      try {
+        renderer.setPixelRatio(autoPR);
+        (window as any).__neonPixelRatio = autoPR;
+      } catch {}
+    };
+    renderer.setPixelRatio(autoPR);
+    try {
+      (window as any).__neonPixelRatio = autoPR;
+    } catch {}
     renderer.setClearColor(COLORS.bg, 1);
 
     // Dynamic resize handler using ResizeObserver (Constraint Checklist Item)
@@ -1194,7 +1223,16 @@ export default function App() {
       camera.fov = verticalFovForAspect(camera.aspect);
       camera.updateProjectionMatrix();
       // Step 2.8: re-budget the pixel ratio on every resize (rotation, window, monitor change).
-      renderer.setPixelRatio(getPixelRatio(width, height));
+      // Step 2.11: a resize restarts the dynamic window from the new budget.
+      qualityCap = getPixelRatio(width, height);
+      autoPR = qualityCap;
+      qualityFrames = 0;
+      qualityTime = 0;
+      qualityWindow = 3;
+      renderer.setPixelRatio(autoPR);
+      try {
+        (window as any).__neonPixelRatio = autoPR;
+      } catch {}
       renderer.setSize(width, height, false);
     });
     resizeObserver.observe(containerRef.current);
@@ -2740,6 +2778,35 @@ export default function App() {
       const isPaused = pausedRef.current;
       const effectiveDt = isPaused ? 0 : dt;
 
+      // Step 2.11: frame-time sampling with a raw wall-clock delta (the capped
+      // dt above would hide jank). Only while actually playing and visible.
+      const nowMs = performance.now();
+      const frameMs = nowMs - lastFrameMs;
+      lastFrameMs = nowMs;
+      if (internalGameState === 'playing' && !isPaused && !document.hidden && frameMs < 1000) {
+        qualityTime += frameMs / 1000;
+        qualityFrames += 1;
+        if (qualityTime >= qualityWindow) {
+          const avgFps = qualityFrames / Math.max(0.001, qualityTime);
+          const headless =
+            typeof navigator !== 'undefined' && (navigator as any).webdriver === true;
+          if (!headless) {
+            if (avgFps < 45 && autoPR > 0.75) {
+              autoPR = Math.max(0.75, autoPR - 0.25);
+              renderer.setPixelRatio(autoPR);
+            } else if (avgFps > 58 && autoPR < qualityCap) {
+              autoPR = Math.min(qualityCap, autoPR + 0.15);
+            }
+            try {
+              (window as any).__neonPixelRatio = autoPR;
+            } catch {}
+          }
+          qualityFrames = 0;
+          qualityTime = 0;
+          qualityWindow = 5;
+        }
+      }
+
       // Adjust game values depending on external state hooks
       if (internalGameState === 'playing') {
         if (!isPaused) {
@@ -3283,6 +3350,8 @@ export default function App() {
         internalGameState = 'playing';
         activeSpeed = BASE_SPEED;
         cameraShakeIntensity = 0.24;
+        // Step 2.11: a new run starts a fresh 3s measurement window.
+        resetQualityWindow();
       },
       resetGame: () => {
         internalGameState = 'playing';
@@ -3300,6 +3369,8 @@ export default function App() {
         brakeHeldRef.current = false;
         setGasHeld(false);
         setBrakeHeld(false);
+        // Step 2.11: fresh measurement window from the full budget.
+        resetQualityWindow();
         setScore(0);
         setSpeed(BASE_SPEED);
         setBoostFuel(100);

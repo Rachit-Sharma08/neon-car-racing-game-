@@ -169,6 +169,9 @@ async function main() {
     }
     note(found, 'Play button appears at 915x412');
     if (found) {
+      // Step 2.11: debug label (menu) shows the budget pixel ratio before the run.
+      const prMenu = await evaluate(`(document.querySelector('#debug-label')||{}).innerText || ''`);
+      note(/pr=\d+\.\d+/.test(prMenu || ''), `debug label shows pixel ratio on menu (${JSON.stringify(prMenu)})`);
       await evaluate(`document.querySelector('#btn-engage-engine').click()`);
       cdpVerified.play = true;
       // countdown is 2950ms; wait then read score text twice
@@ -180,6 +183,9 @@ async function main() {
       const n1 = num(d1), n2 = num(d2);
       cdpVerified.distance = n2 > n1 && n2 > 0;
       note(cdpVerified.distance, `distance increases while playing (${JSON.stringify(d1)} -> ${JSON.stringify(d2)})`);
+      // Step 2.11: live ratio stays within [0.75, cap]; headless never downgrades.
+      const prLive = await evaluate(`window.__neonPixelRatio`);
+      note(typeof prLive === 'number' && prLive >= 0.75 && prLive <= 2, `live pixel ratio in range (pr=${prLive})`);
       // Step 2.10 pedals: visible, brake decelerates, Auto-gas OFF coasts, Gas re-accelerates
       const hasPedals = await evaluate(`!!document.querySelector('#ctrl-brake-pedal') && !!document.querySelector('#ctrl-gas-pedal')`);
       note(!!hasPedals, 'brake + gas pedals visible while playing');
