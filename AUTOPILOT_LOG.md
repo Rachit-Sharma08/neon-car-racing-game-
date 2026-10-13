@@ -17,3 +17,11 @@ Assumptions:
 - A2: No new dependencies for smoke (Chrome headless + Node stdlib only).
 - A3: S2 layout: bottom-left = Left/Right arrows, bottom-right = Brake + Gas, Nitro stays centre. Multi-touch via pointer events.
 - A4: Headless (navigator.webdriver) skips permanent downgrade in S3.
+
+## S1 Step 2.9 - DONE
+- Code was already on main (9180120 rem scale, 909d4cf 3rem buttons, e0add09 edge-anchored menu, 4322cac 2-col garage). No visual changes made (guardrail: no colour/font/token changes).
+- Added scripts/smoke.mjs (Node stdlib + system Chrome only, no new dep): preview server reuse, static bundle checks, headless dump-dom console-error check, CDP interaction (Play -> distance 33m->58m -> pause -> quit-confirm -> menu -> portrait rotate overlay), screenshots at 7 sizes.
+- Screenshots saved to qa-screenshots/autopilot/ (gitignored): 844x390, 1180x820, 915x412, 1366x768, 1920x1080, 2560x1080, 3840x2160 menu. Verified 915x412 + 844x390 visually: Play visible, no scroll, phone layout not worse.
+- Ticked AGENTS.md Step 2.9.
+- Verified: npm run build OK (57s), node scripts/smoke.mjs all PASS (14/14).
+- NOT verified: garage at exactly 844x390 (no automated garage-open shot); 1180x820/1366x768/4K only eyeballed via file sizes, not opened.
