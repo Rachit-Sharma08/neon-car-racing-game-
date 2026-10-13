@@ -15,12 +15,16 @@ Owner: Rachit (beginner-to-intermediate, hand-codes parts himself). Explain what
 
 ## Stack (filled by Step 1 audit)
 - Framework/bundler: Vite 6 + React 19 + TypeScript 5.8, Tailwind CSS v4 (via @tailwindcss/vite). No router library.
-- Rendering: Three.js 0.185 (WebGL) for the 3D scene; React 19 + Tailwind v4 for all UI. Everything is inside ONE file.
-- Key files: src/App.tsx (~3970 lines = whole app), src/main.tsx (mount), src/index.css (keyframes + fonts).
-  src/App.tsx contains: SynthEngine (Web Audio), VEHICLES (car list), SpeedRadialGauge (SVG HUD),
-  App() = React state + all screens, and the whole Three.js scene inside one useEffect
-  (road segments, 3 zone look sets, train, player car builder, nitro/drift particles,
-  traffic pool + AI, render loop, keyboard input, ref API used by UI buttons).
+- Rendering: Three.js 0.185 (WebGL) for the 3D scene; React 19 + Tailwind v4 for all UI, split into modules (Step 4).
+- Key files (after Step 4 split): src/App.tsx (~554 lines = state + screen wiring only), src/main.tsx,
+  src/index.css (keyframes + fonts), src/styles/tokens.css (all tokens + --ui-root-size).
+  src/game/scene.ts = the whole Three.js scene hook (road segments, 3 zone look sets, train, player car
+  builder, nitro/drift particles, traffic pool + AI, render loop, keyboard input, auto quality, ref API).
+  src/game/synth.ts = SynthEngine (Web Audio). src/game/vehicles.ts = VEHICLES list.
+  src/game/viewport.ts = orientation hook, camera FOV by aspect, pixel-ratio budget.
+  src/ui/* = every screen (Hud, Controls, MainMenu, GarageOverlay, PauseOverlays, GameOverOverlay,
+  StaticOverlays, DebugLabel). src/hooks/useRunInterruption.ts = exit/back/auto-pause handling.
+  Note: src/game/scene.ts is still one big file (~2400 lines) - the next split candidate is the road/scenery builder.
 - Deploy: Vercel, no vercel.json. Vite defaults: build `vite build`, output `dist`. Git repo -> GitHub -> Vercel
   (github.com/Rachit-Sharma08/neon-car-racing-game-). Build verified OK (47s, 807 kB JS / 217 kB gzip).
 
@@ -96,10 +100,12 @@ The whole app is LANDSCAPE-ONLY and must work on:
 - [x] Step 2.7: cross-device audit
 - [x] Step 2.8: cross-device fixes (from the audit)
 - [x] Step 2.9: UI scale + layouts (rem scale unit, edge-anchored menu/HUD, two-column garage, scripts/smoke.mjs + autopilot screenshots)
-- [ ] Step 3A: real car models (Kenney Car Kit, CC0)
+- [x] Step 2.10: touch controls - brake + gas pedals, Auto gas setting, Shift = nitro
+- [x] Step 2.11: auto quality - frame-time measured pixel ratio, shown in the debug label
+- [ ] Step 3A: real car models (Kenney Car Kit, CC0) - BLOCKED: no .glb/.gltf in the repo, needs DESIGN HANDOFF to add public/models/car-kit/
 - [ ] Step 3B: design redesign of Menu/Garage/HUD to match the reference (so far: 3a+3b done - tokens + daylight
   palette; left over: 3c help text still long, 3d no camera-button slot, 3e car/traffic/nitro colours still neon)
-- [ ] Step 4: split App.tsx into modules
+- [x] Step 4: split App.tsx into modules (App.tsx 4446 -> ~554 lines; src/game/{scene,synth,vehicles,viewport}, src/ui/{Hud,Controls,MainMenu,GarageOverlay,PauseOverlays,GameOverOverlay,StaticOverlays,DebugLabel}, src/hooks/useRunInterruption)
 - [ ] Step 5: core gameplay
 - [ ] Step 6: maps and scenery
 - [ ] Step 7: garage, upgrades, save
