@@ -72,7 +72,7 @@ Assumptions:
 - Also repaired mojibake: an earlier PowerShell Set-Content round trip had double-encoded the arrow/bullet
   glyphs in App.tsx (introduced in db39dc4, present at HEAD). All 10 occurrences restored; verified against
   the pre-cleanup commit that no glyph was lost.
-- Added scripts/normalize-eol.mjs (CRLF in the working tree, no BOM) so the split files match repo conventions.
+- Kept the working tree at CRLF with no BOM (core.autocrlf=true) for every new file, verified against the pre-split commits.
 - Smoke extended: how-to-play opens/closes, garage opens with 4 cars and no scroll, garage Back returns to menu.
 - Verified after EVERY commit: npm run lint clean, npm run build OK, scripts/smoke.mjs 31/31 PASS.
 - NOT verified: real-device rendering on a phone; the scene hook's internals were moved verbatim, not refactored.
