@@ -1,6 +1,8 @@
 /* ---------- VEHICLE DEFINITIONS (Step 4 split) ---------- */
+export type VehicleId = 'titan' | 'blade' | 'glide' | 'bmw';
+
 export interface Vehicle {
-  id: 'titan' | 'blade' | 'glide' | 'bmw';
+  id: VehicleId;
   name: string;
   mark: string;
   color: number;

@@ -178,6 +178,26 @@ async function main() {
         await sleep(400);
       }
       note(/pr=\d+\.\d+/.test(prMenu || ''), `debug label shows pixel ratio on menu (${JSON.stringify(prMenu)})`);
+      // How to play modal opens and closes.
+      await evaluate(`document.querySelector('#btn-how-to-play')?.click()`);
+      await sleep(600);
+      const helpOpen = await evaluate(`!!document.querySelector('.arcade-panel h2') && document.body.innerText.includes('How to play')`);
+      note(!!helpOpen, 'how to play modal opens');
+      await evaluate(`Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'Ready')?.click()`);
+      await sleep(500);
+      const helpClosed = await evaluate(`!document.body.innerText.includes('Neon Rush 3D is a highway traffic racer')`);
+      note(!!helpClosed, 'how to play modal closes');
+      // Garage opens, shows the two-column layout with a car list, and Back closes it.
+      await evaluate(`document.querySelector('#btn-garage')?.click()`);
+      await sleep(700);
+      const garageOpen = await evaluate(`!!document.querySelector('#garage-overlay')`);
+      const garageCars = await evaluate(`document.querySelectorAll('[id^="garage-btn-"]').length`);
+      const garageScroll = await evaluate(`(() => { const el = document.querySelector('#garage-overlay'); return el ? el.scrollHeight - el.clientHeight : -1; })()`);
+      note(!!garageOpen && garageCars === 4 && garageScroll <= 1, `garage opens with ${garageCars} cars and no scroll (overflow=${garageScroll}px)`);
+      await evaluate(`document.querySelector('#garage-back-btn')?.click()`);
+      await sleep(600);
+      const garageClosed = await evaluate(`!document.querySelector('#garage-overlay') && !!document.querySelector('#btn-engage-engine')`);
+      note(!!garageClosed, 'garage Back returns to menu');
       await evaluate(`document.querySelector('#btn-engage-engine').click()`);
       cdpVerified.play = true;
       // countdown is 2950ms; wait then read score text twice
