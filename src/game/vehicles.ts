@@ -1,4 +1,4 @@
-﻿/* ---------- VEHICLE DEFINITIONS (Step 4 split) ---------- */
+/* ---------- VEHICLE DEFINITIONS (Step 4 split) ---------- */
 export interface Vehicle {
   id: 'titan' | 'blade' | 'glide' | 'bmw';
   name: string;

@@ -1,4 +1,4 @@
-﻿
+
 /* ---------- VIEWPORT HELPERS (Step 4 split) ----------
    Orientation detection, the camera-FOV-by-aspect rule and the pixel-ratio
    budget. Pure helpers plus one hook: no React screens live here. */

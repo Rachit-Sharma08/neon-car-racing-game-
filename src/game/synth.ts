@@ -1,4 +1,4 @@
-﻿
+
 /* ---------- AUDIO SYNTH ENGINE (Step 4 split) ---------- */
 class SynthEngine {
   private ctx: AudioContext | null = null;
