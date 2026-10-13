@@ -16,6 +16,7 @@ const files = [
   'src/ui/GameOverOverlay.tsx',
   'src/ui/StaticOverlays.tsx',
   'src/game/scene.ts',
+  'src/hooks/useRunInterruption.ts',
   'src/index.css',
   'src/styles/tokens.css',
   'scripts/smoke.mjs',

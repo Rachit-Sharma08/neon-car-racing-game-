@@ -41,6 +41,7 @@ import { GameOverOverlay, QuitConfirmOverlay } from './ui/GameOverOverlay';
 import { GarageOverlay } from './ui/GarageOverlay';
 import { HowToPlayOverlay, RotateOverlay, WebglErrorOverlay } from './ui/StaticOverlays';
 import { useGameScene } from './game/scene';
+import { useRunInterruption } from './hooks/useRunInterruption';
 
 export default function App() {
   /* ---------- REACT STATE ---------- */
@@ -408,65 +409,17 @@ export default function App() {
     }
   }, [gameState]);
 
-  // Exit / interruption handling:
+  // Exit / interruption handling (src/hooks/useRunInterruption.ts):
   //  - auto-pause when the app loses focus or the tab is hidden (never auto-resumes)
   //  - Android Back button pauses the run instead of leaving the page
-  useEffect(() => {
-    const inRun = () => {
-      const st = gameStateRef.current;
-      return st === 'playing' || st === 'countdown';
-    };
-
-    const onVisibilityChange = () => {
-      if (document.hidden && inRun() && !pausedRef.current) {
-        pauseRunRef.current();
-      }
-    };
-
-    const onWindowBlur = () => {
-      if (inRun() && !pausedRef.current) {
-        pauseRunRef.current();
-      }
-    };
-
-    const onFullscreenChange = () => {
-      const on = !!document.fullscreenElement;
-      setFullscreenOn(on);
-      try {
-        localStorage.setItem('neon_rush_fullscreen', on ? 'true' : 'false');
-      } catch {}
-      if (!on && inRun() && !pausedRef.current) {
-        pauseRunRef.current();
-      }
-    };
-
-    const onPopState = () => {
-      const st = gameStateRef.current;
-      if (st === 'playing' || st === 'countdown') {
-        if (pausedRef.current) {
-          setShowQuitConfirm(true);
-        } else {
-          try {
-            history.pushState({ game: true }, '');
-          } catch {}
-          pauseRunRef.current();
-        }
-      } else if (st === 'gameover') {
-        goToMainMenuRef.current();
-      }
-    };
-
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('blur', onWindowBlur);
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    window.addEventListener('popstate', onPopState);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('blur', onWindowBlur);
-      document.removeEventListener('fullscreenchange', onFullscreenChange);
-      window.removeEventListener('popstate', onPopState);
-    };
-  }, []);
+  useRunInterruption({
+    gameStateRef,
+    pausedRef,
+    pauseRunRef,
+    goToMainMenuRef,
+    setFullscreenOn,
+    setShowQuitConfirm,
+  });
 
   const activeVehicle = VEHICLES.find(v => v.id === selectedVehicleId) || VEHICLES[0];
   const progressToObjective = Math.min(100, Math.floor((dodgeCount / 15) * 100));
