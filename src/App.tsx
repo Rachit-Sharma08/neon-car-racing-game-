@@ -36,6 +36,7 @@ import { DebugLabel } from './ui/DebugLabel';
 import { Hud } from './ui/Hud';
 import { Controls } from './ui/Controls';
 import { CountdownOverlay, PauseOverlay } from './ui/PauseOverlays';
+import { MainMenu } from './ui/MainMenu';
 
 export default function App() {
   /* ---------- REACT STATE ---------- */
@@ -2868,118 +2869,34 @@ export default function App() {
               </div>
             )}
 
-            {/* --- OVERLAY: MAIN MENU (Step 2.9: anchored to the screen edges, not a centre band) --- */}
+            {/* --- OVERLAY: MAIN MENU (src/ui/MainMenu.tsx) --- */}
             {gameState === 'title' && (
-              <div
-                className="absolute inset-0 bg-asphalt/85 flex flex-col z-10 overflow-y-auto safe-pad-t safe-pad-b safe-pad-l safe-pad-r"
-                id="title-screen-overlay"
-              >
-                {/* Top row: sound + fullscreen on the left, player name on the right */}
-                <div className="w-full flex items-start justify-between gap-2 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="arcade-button w-12 h-12 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
-                        onClick={() => setMuted(!muted)}
-                        title={muted ? "Unmute audio" : "Mute audio"}
-                        id="audio-toggle"
-                      >
-                        {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                      </button>
-                      {canFullscreen && (
-                        <button
-                          className="arcade-button w-12 h-12 bg-steel border-edge text-muted cursor-pointer flex items-center justify-center"
-                          onClick={toggleFullscreen}
-                          title={fullscreenOn ? "Exit fullscreen" : "Go fullscreen"}
-                          id="btn-fullscreen-menu"
-                        >
-                          {fullscreenOn ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                        </button>
-                      )}
-                    </div>
-                    {isEditingName ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="text"
-                          value={nameInput}
-                          onChange={(e) => setNameInput(e.target.value.toUpperCase())}
-                          className="bg-asphalt border border-edge text-xs px-2 py-1 rounded-ui text-text w-24 focus:outline-none"
-                          maxLength={12}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveUsername();
-                            if (e.key === 'Escape') setIsEditingName(false);
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          onClick={handleSaveUsername}
-                          className="text-xs font-semibold text-asphalt bg-primary px-2 py-1 rounded-ui cursor-pointer"
-                        >
-                          Save
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        className="text-xs font-semibold text-muted cursor-pointer flex items-center gap-1"
-                        onClick={() => {
-                          setNameInput(username);
-                          setIsEditingName(true);
-                        }}
-                        title="Edit driver name"
-                      >
-                        <span>{username}</span>
-                        <span className="text-[0.625rem] opacity-60 font-normal">(edit)</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bottom row: title + best distance on the left, actions on the right */}
-                  <div className="mt-auto w-full flex items-end justify-between gap-4 sm:gap-8">
-
-                    <div className="flex flex-col items-start text-left gap-1.5 sm:gap-2 min-w-0">
-                      <div className="inline-block px-3 py-1 rounded-ui bg-steel border border-edge text-muted text-xs font-semibold">
-                        3D highway traffic racer
-                      </div>
-
-                      <h1 className="text-4xl sm:text-6xl font-bold text-text font-display">
-                        Neon Rush 3D
-                      </h1>
-
-                      {highScore > 0 && (
-                        <div className="text-primary text-sm font-semibold flex items-center gap-1.5">
-                          <Trophy className="w-4 h-4" /> Best distance: {highScore}m
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="w-[45%] sm:w-[24rem] max-w-[24rem] shrink-0 flex flex-col gap-2 sm:gap-3">
-                      <button
-                        onClick={startGame}
-                        className="arcade-button w-full min-h-14 px-6 py-4 bg-primary text-asphalt font-bold text-lg font-display cursor-pointer flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                        id="btn-engage-engine"
-                      >
-                        <Play className="w-6 h-6 fill-current" /> Play
-                      </button>
-                      <div className="grid grid-cols-2 gap-3">
-                        <button
-                          onClick={() => setGarageOpen(true)}
-                          className="arcade-button min-h-12 px-4 py-3 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
-                          id="btn-garage"
-                        >
-                          <Car className="w-4 h-4" /> Garage
-                        </button>
-                        <button
-                          onClick={() => setShowHelpModal(true)}
-                          className="arcade-button min-h-12 px-4 py-3 bg-steel border-edge text-text font-semibold text-sm cursor-pointer flex items-center justify-center gap-2"
-                          id="btn-how-to-play"
-                        >
-                          <HelpCircle className="w-4 h-4" /> How to play
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <DebugLabel portrait={isPortrait} />
-              </div>
+              <MainMenu
+                highScore={highScore}
+                muted={muted}
+                fullscreenOn={fullscreenOn}
+                canFullscreen={canFullscreen}
+                username={username}
+                isEditingName={isEditingName}
+                nameInput={nameInput}
+                isPortrait={isPortrait}
+                onToggleMute={() => setMuted(!muted)}
+                onToggleFullscreen={toggleFullscreen}
+                onStartEditName={() => {
+                  setNameInput(username);
+                  setIsEditingName(true);
+                }}
+                onNameInputChange={setNameInput}
+                onNameInputKeyDown={(key) => {
+                  if (key === 'Enter') handleSaveUsername();
+                  if (key === 'Escape') setIsEditingName(false);
+                }}
+                onSaveUsername={handleSaveUsername}
+                onCancelEditName={() => setIsEditingName(false)}
+                onPlay={startGame}
+                onOpenGarage={() => setGarageOpen(true)}
+                onOpenHelp={() => setShowHelpModal(true)}
+              />
             )}
 
             {gameState === 'gameover' && (
