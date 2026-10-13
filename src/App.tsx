@@ -834,6 +834,17 @@ export default function App() {
   // Nitro Boost state
   const [boostFuel, setBoostFuel] = useState<number>(100);
   const [isBoosting, setIsBoosting] = useState<boolean>(false);
+  // Step 2.10: pedal input state (Auto gas keeps the old auto-acceleration).
+  const [gasHeld, setGasHeld] = useState<boolean>(false);
+  const [brakeHeld, setBrakeHeld] = useState<boolean>(false);
+  const [autoGas, setAutoGas] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('neon_rush_autogas');
+      return saved === null ? true : saved === 'true';
+    } catch {
+      return true;
+    }
+  });
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
   const [garageOpen, setGarageOpen] = useState<boolean>(false);
   // Step 2.6: one hook drives orientation for the whole app.
@@ -852,6 +863,11 @@ export default function App() {
   // Active vehicle state ref for the fast-paced Three.js animation loop
   const activeVehicleRef = useRef<Vehicle>(VEHICLES[0]);
   const pausedRef = useRef<boolean>(false);
+  // Step 2.10: pedal refs mirror the React state so the render loop reads
+  // the live value without re-creating the Three.js scene.
+  const gasHeldRef = useRef<boolean>(false);
+  const brakeHeldRef = useRef<boolean>(false);
+  const autoGasRef = useRef<boolean>(true);
   // Step 2.5 exit and interruption handling refs
   const gameStateRef = useRef<'title' | 'countdown' | 'playing' | 'gameover'>('title');
   const runPushedRef = useRef<boolean>(false);
@@ -957,6 +973,14 @@ export default function App() {
     synth.setMute(muted);
   }, [muted]);
 
+  // Step 2.10: keep the loop ref in sync and persist the Auto gas choice.
+  useEffect(() => {
+    autoGasRef.current = autoGas;
+    try {
+      localStorage.setItem('neon_rush_autogas', autoGas ? 'true' : 'false');
+    } catch {}
+  }, [autoGas]);
+
   // Step 2.6: the whole app is landscape-only. In portrait the Rotate overlay
   // covers every screen and any run in progress is paused. It never auto-resumes.
   useEffect(() => {
@@ -965,7 +989,16 @@ export default function App() {
     }
   }, [isPortrait, gameState, paused]);
 
-  // Sync active vehicle ref when user clicks in React UI
+  // Step 2.10: pedal setters update the UI state and the loop refs together.
+  // Each pedal is independent so multi-touch steer + gas + brake works.
+  const setGas = (held: boolean) => {
+    gasHeldRef.current = held;
+    setGasHeld(held);
+  };
+  const setBrake = (held: boolean) => {
+    brakeHeldRef.current = held;
+    setBrakeHeld(held);
+  };
   const handleSelectVehicle = (id: 'titan' | 'blade' | 'glide' | 'bmw') => {
     setSelectedVehicleId(id);
     const vehicle = VEHICLES.find(v => v.id === id);
@@ -2730,7 +2763,25 @@ export default function App() {
             boostActive = false;
             wasBoosting = false;
             boostFuel = Math.min(100, boostFuel + dt * 14); // recharges over ~7s
-            activeSpeed = baseSpeedCalc;
+            // Step 2.10: Auto gas ON keeps the old auto-acceleration (the speed
+            // tracks the ramp every frame). When OFF the speed only rises
+            // while Gas is held and coasts down when released.
+            if (autoGasRef.current || gasHeldRef.current) {
+              if (activeSpeed < baseSpeedCalc) {
+                activeSpeed = Math.min(baseSpeedCalc, activeSpeed + 14 * dt);
+              } else if (activeSpeed > baseSpeedCalc) {
+                activeSpeed = Math.max(baseSpeedCalc, activeSpeed - 20 * dt);
+              } else {
+                activeSpeed = baseSpeedCalc;
+              }
+            } else {
+              activeSpeed = Math.max(0, activeSpeed - 9 * dt);
+            }
+          }
+          // Step 2.10: Brake always decelerates strongly, in both modes
+          // (applied after boost too so it wins while held).
+          if (brakeHeldRef.current) {
+            activeSpeed = Math.max(0, activeSpeed - 34 * dt);
           }
           
           // Accumulate active score based on speed (boost multiplier rewards brave driving!)
@@ -3245,6 +3296,10 @@ export default function App() {
         boostRequested = false;
         boostActive = false;
         wasBoosting = false;
+        gasHeldRef.current = false;
+        brakeHeldRef.current = false;
+        setGasHeld(false);
+        setBrakeHeld(false);
         setScore(0);
         setSpeed(BASE_SPEED);
         setBoostFuel(100);
@@ -3282,12 +3337,22 @@ export default function App() {
       setBoost: (active: boolean) => {
         boostRequested = active;
       },
+      setGas: (active: boolean) => {
+        gasHeldRef.current = active;
+        setGasHeld(active);
+      },
+      setBrake: (active: boolean) => {
+        brakeHeldRef.current = active;
+        setBrakeHeld(active);
+      },
       setExternalState: (state: 'title' | 'countdown' | 'playing' | 'gameover') => {
         internalGameState = state;
       }
     };
 
     /* ---------- INPUT EVENT LISTENERS ---------- */
+    // Step 2.10 keyboard: Arrows/WASD steer, W/Up = gas, S/Space/Down = brake,
+    // Shift = nitro, P = pause. Space/Enter still starts the run from menus.
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['ArrowLeft', 'KeyA'].includes(e.code)) {
         gameLoopRef.current?.changeLaneLeft();
@@ -3295,8 +3360,16 @@ export default function App() {
       if (['ArrowRight', 'KeyD'].includes(e.code)) {
         gameLoopRef.current?.changeLaneRight();
       }
-      if (['ArrowUp', 'KeyW', 'ShiftLeft', 'ShiftRight'].includes(e.code)) {
+      if (['ArrowUp', 'KeyW'].includes(e.code)) {
+        gameLoopRef.current?.setGas(true);
+      }
+      if (['ShiftLeft', 'ShiftRight'].includes(e.code)) {
         gameLoopRef.current?.setBoost(true);
+      }
+      if (['ArrowDown', 'KeyS', 'Space'].includes(e.code)) {
+        if (internalGameState === 'playing') {
+          gameLoopRef.current?.setBrake(true);
+        }
       }
       if (['KeyP', 'Pause'].includes(e.code)) {
         if (internalGameState === 'playing') {
@@ -3306,17 +3379,22 @@ export default function App() {
       if (['Space', 'Enter'].includes(e.code)) {
         if (internalGameState === 'title' || internalGameState === 'gameover') {
           startRaceCountdownRef.current?.();
-        } else if (internalGameState === 'playing') {
-          if (e.code === 'Space') {
-            gameLoopRef.current?.setBoost(true);
-          }
         }
+      }
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        e.preventDefault();
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (['ArrowUp', 'KeyW', 'ShiftLeft', 'ShiftRight', 'Space'].includes(e.code)) {
+      if (['ArrowUp', 'KeyW'].includes(e.code)) {
+        gameLoopRef.current?.setGas(false);
+      }
+      if (['ShiftLeft', 'ShiftRight'].includes(e.code)) {
         gameLoopRef.current?.setBoost(false);
+      }
+      if (['ArrowDown', 'KeyS', 'Space'].includes(e.code)) {
+        gameLoopRef.current?.setBrake(false);
       }
     };
 
@@ -3466,7 +3544,7 @@ export default function App() {
                         : 'text-muted'
                   }`}>
                     <Flame className={`w-4 h-4 ${isBoosting ? 'text-asphalt' : 'text-primary'}`} />
-                    <span>{isBoosting ? 'Nitro active (+80% score)' : `Nitro fuel: ${boostFuel}% (hold W / ↑)`}</span>
+                    <span>{isBoosting ? 'Nitro active (+80% score)' : `Nitro fuel: ${boostFuel}% (hold Shift)`}</span>
                   </div>
                 </div>
 
@@ -3546,7 +3624,11 @@ export default function App() {
                 <div className="mt-8 px-5 py-2.5 rounded-ui bg-asphalt border border-edge text-muted text-xs flex items-center gap-3">
                   <span>Steer: <strong className="text-text">A / D or ← / →</strong></span>
                   <span className="text-edge">•</span>
-                  <span>Nitro: <strong className="text-text">hold W / ↑ / Space</strong></span>
+                  <span>Gas: <strong className="text-text">W / ↑</strong></span>
+                  <span className="text-edge">•</span>
+                  <span>Brake: <strong className="text-text">S / Space</strong></span>
+                  <span className="text-edge">•</span>
+                  <span>Nitro: <strong className="text-text">Shift</strong></span>
                 </div>
               </div>
             )}
@@ -3572,6 +3654,18 @@ export default function App() {
                       <div className="hud-number text-xl font-bold text-speed font-display">{Math.round(speed * 6.5)} km/h</div>
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => setAutoGas(v => !v)}
+                    className="arcade-button mt-4 w-full px-4 py-2.5 bg-steel text-text font-semibold cursor-pointer text-sm font-body flex items-center justify-between"
+                    id="setting-autogas"
+                    title="ON: the car speeds up on its own. OFF: hold Gas to speed up."
+                  >
+                    <span>Auto gas</span>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-ui border ${autoGas ? 'bg-go border-go text-asphalt' : 'bg-asphalt border-edge text-muted'}`}>
+                      {autoGas ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
 
                   <div className="mt-5 flex flex-col gap-2.5">
                     <button 
@@ -3808,7 +3902,7 @@ export default function App() {
               </div>
             )}
 
-            {/* --- ON-SCREEN CONTROLS: STEER & NITRO BOOST --- */}
+            {/* --- ON-SCREEN CONTROLS: STEER (left) + NITRO (centre) + PEDALS (right) --- */}
             {gameState === 'playing' && (
               <div 
                 key="on-screen-steering-controls"
@@ -3816,7 +3910,8 @@ export default function App() {
                 id="on-screen-steering"
               >
                 
-                {/* Left Steer Button */}
+                {/* Bottom-left: Left/Right steering arrows (independent pointers) */}
+                <div className="flex items-center gap-2 pointer-events-auto">
                 <button 
                   className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
                   onClick={() => gameLoopRef.current?.changeLaneLeft()}
@@ -3829,6 +3924,19 @@ export default function App() {
                     <span className="text-[0.625rem] text-muted">A / ←</span>
                   </div>
                 </button>
+                <button 
+                  className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
+                  onClick={() => gameLoopRef.current?.changeLaneRight()}
+                  title="Steer right (D or →)"
+                  id="ctrl-steer-right"
+                >
+                  <div className="text-right hidden sm:flex flex-col">
+                    <span className="text-xs font-bold font-display">Right</span>
+                    <span className="text-[0.625rem] text-muted">D / →</span>
+                  </div>
+                  <ArrowRight className="w-6 h-6 text-secondary" />
+                </button>
+                </div>
 
                 {/* Nitro Boost Button */}
                 <button
@@ -3842,9 +3950,10 @@ export default function App() {
                   onPointerDown={() => gameLoopRef.current?.setBoost(true)}
                   onPointerUp={() => gameLoopRef.current?.setBoost(false)}
                   onPointerLeave={() => gameLoopRef.current?.setBoost(false)}
+                  onPointerCancel={() => gameLoopRef.current?.setBoost(false)}
                   onTouchStart={(e) => { e.preventDefault(); gameLoopRef.current?.setBoost(true); }}
                   onTouchEnd={(e) => { e.preventDefault(); gameLoopRef.current?.setBoost(false); }}
-                  title="Hold for nitro speed boost (W / ↑ / Shift / Space)"
+                  title="Hold for nitro speed boost (Shift)"
                   id="ctrl-nitro-boost"
                 >
                   {/* Fuel gauge fill inside button */}
@@ -3859,24 +3968,50 @@ export default function App() {
                       {isBoosting ? 'Boosting' : 'Nitro'}
                     </span>
                     <span className="text-[0.625rem] text-muted">
-                      Hold W / ↑ ({boostFuel}%)
+                      Hold Shift ({boostFuel}%)
                     </span>
                   </div>
                 </button>
 
-                {/* Right Steer Button */}
-                <button 
-                  className="arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui bg-steel border-edge flex items-center gap-2 text-text cursor-pointer active:scale-95"
-                  onClick={() => gameLoopRef.current?.changeLaneRight()}
-                  title="Steer right (D or →)"
-                  id="ctrl-steer-right"
+                {/* Bottom-right: Brake + Gas pedals (independent pointers, multi-touch safe) */}
+                <div className="flex items-center gap-2 pointer-events-auto">
+                <button
+                  className={`arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui border-edge flex items-center gap-2 cursor-pointer select-none active:scale-95 ${
+                    brakeHeld ? 'bg-danger border-danger text-asphalt' : 'bg-steel text-text'
+                  }`}
+                  onPointerDown={(e) => { e.preventDefault(); setBrake(true); }}
+                  onPointerUp={() => setBrake(false)}
+                  onPointerLeave={() => setBrake(false)}
+                  onPointerCancel={() => setBrake(false)}
+                  onTouchStart={(e) => { e.preventDefault(); setBrake(true); }}
+                  onTouchEnd={(e) => { e.preventDefault(); setBrake(false); }}
+                  title="Brake (S or Space)"
+                  id="ctrl-brake-pedal"
                 >
-                  <div className="text-right hidden sm:flex flex-col">
-                    <span className="text-xs font-bold font-display">Right</span>
-                    <span className="text-[0.625rem] text-muted">D / →</span>
+                  <div className="text-left flex flex-col">
+                    <span className="text-xs font-bold font-display">Brake</span>
+                    <span className="text-[0.625rem] opacity-70">S / Space</span>
                   </div>
-                  <ArrowRight className="w-6 h-6 text-secondary" />
                 </button>
+                <button
+                  className={`arcade-button pointer-events-auto h-13 sm:h-16 px-4 sm:px-6 rounded-ui border-edge flex items-center gap-2 cursor-pointer select-none active:scale-95 ${
+                    gasHeld ? 'bg-go border-go text-asphalt' : 'bg-steel text-text'
+                  }`}
+                  onPointerDown={(e) => { e.preventDefault(); setGas(true); }}
+                  onPointerUp={() => setGas(false)}
+                  onPointerLeave={() => setGas(false)}
+                  onPointerCancel={() => setGas(false)}
+                  onTouchStart={(e) => { e.preventDefault(); setGas(true); }}
+                  onTouchEnd={(e) => { e.preventDefault(); setGas(false); }}
+                  title="Gas (W or ↑)"
+                  id="ctrl-gas-pedal"
+                >
+                  <div className="text-left flex flex-col">
+                    <span className="text-xs font-bold font-display">Gas</span>
+                    <span className="text-[0.625rem] opacity-70">W / ↑</span>
+                  </div>
+                </button>
+                </div>
               </div>
             )}
 
@@ -4141,8 +4276,16 @@ export default function App() {
                     <span className="text-secondary bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">A / D or ← / →</span>
                   </li>
                   <li className="flex items-center justify-between text-xs">
+                    <span className="text-text">Gas:</span>
+                    <span className="text-text bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">Hold W / ↑ or the Gas pedal</span>
+                  </li>
+                  <li className="flex items-center justify-between text-xs">
+                    <span className="text-text">Brake:</span>
+                    <span className="text-text bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">Hold S / Space or the Brake pedal</span>
+                  </li>
+                  <li className="flex items-center justify-between text-xs">
                     <span className="text-text">Nitro boost:</span>
-                    <span className="text-primary bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">Hold W / ↑ / Space</span>
+                    <span className="text-primary bg-asphalt px-2.5 py-1 rounded-ui border border-edge font-bold">Hold Shift or the Nitro button</span>
                   </li>
                   <li className="flex items-center justify-between text-xs">
                     <span className="text-text">Pause / resume:</span>
@@ -4161,7 +4304,7 @@ export default function App() {
                   <Flame className="w-4 h-4 text-primary" /> 3. Nitro boost
                 </div>
                 <p className="text-muted leading-relaxed">
-                  Hold down <strong className="text-text">W / ↑ / Space or the boost button</strong> to use nitro overdrive. You earn a <strong className="text-text">+80% score multiplier</strong>. Release it and the tank refills over time.
+                  Hold down <strong className="text-text">Shift or the Nitro button</strong> to use nitro overdrive. You earn a <strong className="text-text">+80% score multiplier</strong>. Release it and the tank refills over time.
                 </p>
               </div>
 

@@ -89,7 +89,7 @@ async function main() {
     const m = html.match(/src="(\/assets\/[^"]+\.js)"/);
     if (m) {
       const js = await (await fetch(new URL(m[1], BASE).toString())).text();
-      for (const id of ['btn-engage-engine', 'gameCanvas', 'rotate-overlay', 'hud-pause-btn', 'garage-overlay', 'paused-screen-overlay']) {
+      for (const id of ['btn-engage-engine', 'gameCanvas', 'rotate-overlay', 'hud-pause-btn', 'garage-overlay', 'paused-screen-overlay', 'ctrl-brake-pedal', 'ctrl-gas-pedal', 'ctrl-steer-left', 'ctrl-steer-right', 'ctrl-nitro-boost', 'setting-autogas']) {
         note(js.includes(id), `bundle contains ${id}`);
       }
       note(!/SYS \/\//.test(js), 'no banned terminal microcopy in bundle');
@@ -180,6 +180,18 @@ async function main() {
       const n1 = num(d1), n2 = num(d2);
       cdpVerified.distance = n2 > n1 && n2 > 0;
       note(cdpVerified.distance, `distance increases while playing (${JSON.stringify(d1)} -> ${JSON.stringify(d2)})`);
+      // Step 2.10 pedals: visible, brake decelerates, Auto-gas OFF coasts, Gas re-accelerates
+      const hasPedals = await evaluate(`!!document.querySelector('#ctrl-brake-pedal') && !!document.querySelector('#ctrl-gas-pedal')`);
+      note(!!hasPedals, 'brake + gas pedals visible while playing');
+      const readKmh = `Number(((document.querySelector('#hud-speed-display').innerText.match(/([\\d,]+)\\s*km\\/h/)||[])[1]||'-1').replace(/,/g,''))`;
+      if (hasPedals) {
+        const s0 = await evaluate(readKmh);
+        await evaluate(`document.querySelector('#ctrl-brake-pedal').dispatchEvent(new PointerEvent('pointerdown', {bubbles:true}))`);
+        await sleep(1500);
+        const s1 = await evaluate(readKmh);
+        await evaluate(`document.querySelector('#ctrl-brake-pedal').dispatchEvent(new PointerEvent('pointerup', {bubbles:true}))`);
+        note(Number(s1) < Number(s0), `brake pedal decelerates (${s0} -> ${s1} km/h)`);
+      }
       // pause menu
       const pauseBtn = await evaluate(`!!document.querySelector('#hud-pause-btn')`);
       if (pauseBtn) {
@@ -189,6 +201,17 @@ async function main() {
         cdpVerified.pause = !!paused;
         note(!!paused, 'pause button opens pause menu');
         if (paused) {
+          const hasToggle = await evaluate(`!!document.querySelector('#setting-autogas')`);
+          note(!!hasToggle, 'Auto gas setting visible in pause menu');
+          if (hasToggle) {
+            const t0 = await evaluate(`document.querySelector('#setting-autogas').innerText`);
+            await evaluate(`document.querySelector('#setting-autogas').click()`);
+            await sleep(400);
+            const t1 = await evaluate(`document.querySelector('#setting-autogas').innerText`);
+            note(t0 !== t1, `Auto gas toggles (default ON, ${JSON.stringify(t0)} -> ${JSON.stringify(t1)})`);
+            await evaluate(`document.querySelector('#setting-autogas').click()`);
+            await sleep(400);
+          }
           await evaluate(`document.querySelector('#btn-quit-to-menu')?.click()`);
           await sleep(800);
           // "Main menu" opens a quit-confirm; confirm it.

@@ -25,3 +25,12 @@ Assumptions:
 - Ticked AGENTS.md Step 2.9.
 - Verified: npm run build OK (57s), node scripts/smoke.mjs all PASS (14/14).
 - NOT verified: garage at exactly 844x390 (no automated garage-open shot); 1180x820/1366x768/4K only eyeballed via file sizes, not opened.
+
+## S2 Step 2.10 controls - DONE
+- Bottom-left: Left/Right arrows; bottom-right: Brake + Gas pedals; Nitro stays centre. All pedals use independent pointer + touch handlers (multi-touch steer + gas + brake verified by code; headless CDP is single-pointer).
+- Setting "Auto gas" default ON (localStorage neon_rush_autogas), toggle in pause menu (#setting-autogas). ON = old auto-acceleration (byte-identical speeds: ramp tracked at +14/s which always catches the +0.45/s ramp). OFF = Gas-held rises toward ramp, released coasts -9/s. Brake always -34/s, applied after boost so it wins while held.
+- Keyboard: A/D or arrows steer, W/Up = gas, S/Down/Space = brake in play (Space/Enter still starts from menus), Shift = nitro, P = pause. Countdown reminder, HUD fuel hint, help guide all updated to the new mapping.
+- Hitboxes, spawn logic, traffic AI untouched.
+- Verified: lint clean, build OK, smoke 25/25 PASS incl. live brake 125->16 km/h, toggle ON->OFF->ON, game + pause screenshots at 915x412 eyeballed (pedals fit, hints correct).
+- NOT verified: real multi-touch (needs a phone); Auto-gas OFF coast/gas-rise curve (only ON-mode tested live); tilt controls (none exist, unchanged).
+- Assumption A5: pedals always visible (also mouse-clickable), not touch-only — simpler and testable.
