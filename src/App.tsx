@@ -1,29 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
 import {
   Trophy,
-  Target,
-  Zap,
   Cpu,
   Volume2,
   VolumeX,
   Compass,
-  User,
   Shield,
   ArrowLeft,
-  ArrowRight,
-  Info,
-  Award,
   Pause,
   Play,
   Flame,
-  Gauge,
   HelpCircle,
   RotateCcw,
-  Sparkles,
-  ChevronRight,
-  X,
-  Car,
   Maximize,
   Minimize,
   Home
@@ -31,8 +19,7 @@ import {
 import { synth } from './game/synth';
 import { VEHICLES } from './game/vehicles';
 import type { Vehicle } from './game/vehicles';
-import { useIsPortrait, verticalFovForAspect, getPixelRatio } from './game/viewport';
-import { DebugLabel } from './ui/DebugLabel';
+import { useIsPortrait } from './game/viewport';
 import { Hud } from './ui/Hud';
 import { Controls } from './ui/Controls';
 import { CountdownOverlay, PauseOverlay } from './ui/PauseOverlays';
@@ -422,7 +409,6 @@ export default function App() {
   });
 
   const activeVehicle = VEHICLES.find(v => v.id === selectedVehicleId) || VEHICLES[0];
-  const progressToObjective = Math.min(100, Math.floor((dodgeCount / 15) * 100));
 
   return (
     <div
