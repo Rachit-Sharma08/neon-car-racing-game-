@@ -170,7 +170,13 @@ async function main() {
     note(found, 'Play button appears at 915x412');
     if (found) {
       // Step 2.11: debug label (menu) shows the budget pixel ratio before the run.
-      const prMenu = await evaluate(`(document.querySelector('#debug-label')||{}).innerText || ''`);
+      // The label refreshes on a 400ms timer, so poll for up to 3s.
+      let prMenu = '';
+      for (let i = 0; i < 10; i++) {
+        prMenu = await evaluate(`(document.querySelector('#debug-label')||{}).innerText || ''`);
+        if (/pr=\d+\.\d+/.test(prMenu || '')) break;
+        await sleep(400);
+      }
       note(/pr=\d+\.\d+/.test(prMenu || ''), `debug label shows pixel ratio on menu (${JSON.stringify(prMenu)})`);
       await evaluate(`document.querySelector('#btn-engage-engine').click()`);
       cdpVerified.play = true;
