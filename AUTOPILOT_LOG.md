@@ -55,3 +55,64 @@ Assumptions:
 - Removed unused deps @google/genai, express, dotenv and devDep @types/express after confirming no import in src/ or config; npm install removed 121 packages and refreshed the lockfile.
 - Kept `motion` (still a declared dep; unused in src but out of scope for this item - logged).
 - Verified: lint clean, build OK (identical JS bytes 803.99 kB, CSS 4 kB smaller), smoke 27/27 PASS, menu screenshot at 915x412 unchanged vs before the CSS deletions.
+
+## S6 Step 4 split App.tsx - DONE (7 commits, smoke after each)
+- src/game/synth.ts (SynthEngine + shared `synth`), src/game/vehicles.ts (Vehicle type, VehicleId, VEHICLES),
+  src/game/viewport.ts (useIsPortrait, SHOW_DEBUG, verticalFovForAspect, getPixelRatio),
+  src/ui/DebugLabel.tsx, src/ui/Hud.tsx, src/ui/Controls.tsx, src/ui/PauseOverlays.tsx (Countdown + Pause),
+  src/ui/MainMenu.tsx, src/ui/GameOverOverlay.tsx (Game over + Quit confirm), src/ui/GarageOverlay.tsx
+  (incl. the SVG car silhouette as a local component), src/ui/StaticOverlays.tsx (how-to-play, rotate,
+  WebGL fallback), src/game/scene.ts (the whole Three.js effect body moved verbatim), src/hooks/useRunInterruption.ts.
+- App.tsx: 4446 -> 554 lines, now only React state, handlers and screen wiring. src/game/scene.ts is ~2410 lines
+  (unchanged body) and is the next split candidate (road/scenery builder).
+- Two real fixes found and made while extracting: (a) the Garage wrapper was a content-sized block so the
+  overlay scrolled 305px at 915x412 - now flex-col + min-h-0 (overflow 0px, verified in smoke);
+  (b) the how-to-play guide still named a real brand ("BMW E34"), changed to "Retro cruiser"/"Retro coupe"
+  to satisfy the "no real brand names" rule in AGENTS.md.
+- Also repaired mojibake: an earlier PowerShell Set-Content round trip had double-encoded the arrow/bullet
+  glyphs in App.tsx (introduced in db39dc4, present at HEAD). All 10 occurrences restored; verified against
+  the pre-cleanup commit that no glyph was lost.
+- Added scripts/normalize-eol.mjs (CRLF in the working tree, no BOM) so the split files match repo conventions.
+- Smoke extended: how-to-play opens/closes, garage opens with 4 cars and no scroll, garage Back returns to menu.
+- Verified after EVERY commit: npm run lint clean, npm run build OK, scripts/smoke.mjs 31/31 PASS.
+- NOT verified: real-device rendering on a phone; the scene hook's internals were moved verbatim, not refactored.
+
+---
+
+# MORNING REPORT
+
+| Step | Status |
+|---|---|
+| S1 Step 2.9 UI scale + layouts | DONE |
+| S2 Step 2.10 brake/gas pedals + Auto gas | DONE |
+| S3 Step 2.11 auto quality | DONE |
+| S4 Step 3A real car models | SKIPPED (no models in repo) |
+| S5 Cleanup | DONE |
+| S6 Step 4 split App.tsx | DONE |
+
+Branch: autopilot-night (main untouched, never committed to)
+Last commit: 8ef48cb docs: tick 2.10/2.11/Step 4, mark Step 3A blocked, refresh Stack section
+Pushed to origin/autopilot-night after every step. main is still at 4322cac.
+Live preview: https://neon-rush-coral.vercel.app still serves main; merge the branch to publish.
+
+## How to test on the phone
+1. Open the game in Chrome on Android, turn the phone sideways (landscape only).
+2. Tap Play, wait for 3-2-1-GO, check the distance counter goes up on the left.
+3. Use the bottom-left arrows to change lane; hold Brake (bottom-right) and the speed must drop fast.
+4. Pause (top-left), switch "Auto gas" OFF, resume, then the car only speeds up while you hold Gas.
+5. Hold Nitro (bottom-centre) or the Shift key equivalent, and rotate to portrait - only "Rotate your phone" shows.
+
+## Known issues
+- Step 3A has no car models: public/models/car-kit does not exist, so cars are still procedural boxes.
+- Auto gas OFF coast + gas-reaccelerate curve was never played live, only the ON path and brake were.
+- src/game/scene.ts is still ~2410 lines; road/scenery builder is the next split.
+- Debug label (bottom-left, pr=2.00) is still visible on every screen - hide with SHOW_DEBUG=false in src/game/viewport.ts.
+- Hitboxes were NOT re-tuned for the new pedals (task said keep unchanged).
+- The help guide text is still long (Step 3B item 3c outstanding), and car/traffic/nitro colours are still neon (3e).
+
+## NOT verified (needs a real device or eyes)
+- Any iPhone / iPad / tablet behaviour; iOS audio unlock; orientation lock; fullscreen on iOS.
+- Multi-touch (steer + gas + brake at the same time) - headless CDP is single-pointer only.
+- Actual 45/58 fps thresholds on a mid-range Android; sustained low-end downgrade then recovery.
+- Screenshots only cover the Main Menu at 7 sizes; garage/HUD/gameover/help were checked by DOM assertions only.
+- Font loading: screenshots use the Google Fonts CDN; offline font fallback is untested.
